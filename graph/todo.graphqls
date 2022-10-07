@@ -1,0 +1,37 @@
+enum TodoStatus {
+    IN_PROGRESS
+    COMPLETED
+}
+
+type Todo {
+    id: ID!
+    name: String!
+    status: TodoStatus!
+    priority: Int!
+    userID: ID
+    createdAt: String!
+    updatedAt: String!
+}
+input CreateTodoInput {
+    name: String!
+    status: TodoStatus = IN_PROGRESS
+    priority: Int!
+    userID: ID!
+}
+input UpdateTodoInput {
+    id: ID!
+    name: String
+    status: TodoStatus
+    priority: Int
+    userID: ID
+}
+
+extend type Query {
+    Todo(id: ID): Todo
+    Todos: [Todo!]!
+}
+
+extend type Mutation {
+    createTodo(input: CreateTodoInput!): Todo!
+    updateTodo(input: UpdateTodoInput!): Todo!
+}
