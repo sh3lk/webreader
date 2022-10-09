@@ -19,9 +19,8 @@ func AuthHandler(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		r := c.Request()
 		authHeader := r.Header.Get(echo.HeaderAuthorization)
-
 		if authHeader == "" {
-			next(c)
+			return next(c)
 		}
 		headerParts := strings.Split(authHeader, " ")
 		if len(headerParts) == 2 && headerParts[0] == "Bearer" {

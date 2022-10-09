@@ -45,11 +45,11 @@ input TodoWhereInput {
   nameHasSuffix: String
   nameEqualFold: String
   nameContainsFold: String
-  """status field predicates"""
-  status: TodoTodoStatus
-  statusNEQ: TodoTodoStatus
-  statusIn: [TodoTodoStatus!]
-  statusNotIn: [TodoTodoStatus!]
+#  """status field predicates"""
+#  status: TodoTodoStatus
+#  statusNEQ: TodoTodoStatus
+#  statusIn: [TodoTodoStatus!]
+#  statusNotIn: [TodoTodoStatus!]
   """priority field predicates"""
   priority: Int
   priorityNEQ: Int

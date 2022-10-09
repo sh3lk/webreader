@@ -1,3 +1,5 @@
+directive @Auth on FIELD_DEFINITION
+
 input AuthInput {
     email: String!
     password: String!
@@ -9,10 +11,10 @@ type Credential {
 }
 
 extend type Query {
-  me: User!
+  me: User! @Auth
 }
 
 extend type Mutation {
-    login(input: AuthInput!): Credential!
-    registration(input: AuthInput!): Credential!
+  login(input: AuthInput!): Credential!
+  registration(input: AuthInput!): Credential!
 }
