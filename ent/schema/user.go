@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"regexp"
 	"webreader/ent/mixin"
 	"webreader/pkg/const/globalid"
 
@@ -24,10 +25,10 @@ type UserMixin struct {
 // Fields of the User.
 func (UserMixin) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("name").
-			NotEmpty().
-			MaxLen(255),
-		field.Int("age").Positive(),
+		field.String("email").
+			Match(regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")).
+			Unique(),
+		field.String("password").NotEmpty(),
 	}
 }
 

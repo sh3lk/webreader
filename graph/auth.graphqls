@@ -1,0 +1,18 @@
+input AuthInput {
+    email: String!
+    password: String!
+}
+
+type Credential {
+  target: User!
+  token: String!
+}
+
+extend type Query {
+  me: User!
+}
+
+extend type Mutation {
+    login(input: AuthInput!): Credential!
+    registration(input: AuthInput!): Credential!
+}

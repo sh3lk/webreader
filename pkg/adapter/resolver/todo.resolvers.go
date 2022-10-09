@@ -12,6 +12,7 @@ import (
 	"webreader/pkg/util/datetime"
 )
 
+// CreateTodo is the resolver for the createTodo field.
 func (r *mutationResolver) CreateTodo(ctx context.Context, input ent.CreateTodoInput) (*ent.Todo, error) {
 	t, err := r.controller.Todo.Create(ctx, input)
 	if err != nil {
@@ -20,6 +21,7 @@ func (r *mutationResolver) CreateTodo(ctx context.Context, input ent.CreateTodoI
 	return t, nil
 }
 
+// UpdateTodo is the resolver for the updateTodo field.
 func (r *mutationResolver) UpdateTodo(ctx context.Context, input ent.UpdateTodoInput) (*ent.Todo, error) {
 	t, err := r.controller.Todo.Update(ctx, input)
 	if err != nil {
@@ -28,6 +30,7 @@ func (r *mutationResolver) UpdateTodo(ctx context.Context, input ent.UpdateTodoI
 	return t, nil
 }
 
+// Todo is the resolver for the Todo field.
 func (r *queryResolver) Todo(ctx context.Context, id *ulid.ID) (*ent.Todo, error) {
 	t, err := r.controller.Todo.Get(ctx, id)
 	if err != nil {
@@ -36,6 +39,7 @@ func (r *queryResolver) Todo(ctx context.Context, id *ulid.ID) (*ent.Todo, error
 	return t, nil
 }
 
+// Todos is the resolver for the Todos field.
 func (r *queryResolver) Todos(ctx context.Context) ([]*ent.Todo, error) {
 	ts, err := r.controller.Todo.List(ctx)
 	if err != nil {
@@ -44,10 +48,12 @@ func (r *queryResolver) Todos(ctx context.Context) ([]*ent.Todo, error) {
 	return ts, nil
 }
 
+// CreatedAt is the resolver for the createdAt field.
 func (r *todoResolver) CreatedAt(ctx context.Context, obj *ent.Todo) (string, error) {
 	return datetime.FormatDate(obj.CreatedAt), nil
 }
 
+// UpdatedAt is the resolver for the updatedAt field.
 func (r *todoResolver) UpdatedAt(ctx context.Context, obj *ent.Todo) (string, error) {
 	return datetime.FormatDate(obj.UpdatedAt), nil
 }

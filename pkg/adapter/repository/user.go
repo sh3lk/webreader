@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"webreader/ent"
 	"webreader/ent/user"
 	"webreader/pkg/entity/model"
@@ -25,6 +26,14 @@ func (r *userRepository) Get(ctx context.Context, id *model.ID) (*model.User, er
 	return u, nil
 }
 
+func (r *userRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
+	u, err := r.client.User.Query().Where(user.EmailEQ(email)).Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
 func (r *userRepository) List(ctx context.Context, after *model.Cursor, first *int, before *model.Cursor, last *int, where *model.UserWhereInput) (*model.UserConnection, error) {
 	us, err := r.client.
 		User.
@@ -37,6 +46,7 @@ func (r *userRepository) List(ctx context.Context, after *model.Cursor, first *i
 }
 
 func (r *userRepository) Create(ctx context.Context, input model.CreateUserInput) (*model.User, error) {
+	fmt.Print(input)
 	u, err := r.client.User.Create().SetInput(input).Save(ctx)
 	if err != nil {
 		return nil, model.NewDBError(err)

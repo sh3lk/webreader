@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"log"
 	"webreader/config"
 	"webreader/ent"
+	"webreader/ent/migrate"
 	"webreader/pkg/adapter/controller"
 	"webreader/pkg/infrastructure/datastore"
 	"webreader/pkg/infrastructure/graphql"
@@ -27,6 +29,15 @@ func newDBClient() *ent.Client {
 	client, err := datastore.NewClient()
 	if err != nil {
 		log.Fatalf("failed opening mysql client: %v", err)
+	}
+
+	if err := client.Schema.Create(
+		context.Background(),
+		migrate.WithDropIndex(true),
+		migrate.WithDropColumn(true),
+		migrate.WithForeignKeys(true),
+	); err != nil {
+		log.Fatalf("failed creating schema resources: %v", err)
 	}
 
 	return client

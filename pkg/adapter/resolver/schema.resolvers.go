@@ -10,6 +10,7 @@ import (
 	"webreader/graph/generated"
 )
 
+// Node is the resolver for the node field.
 func (r *queryResolver) Node(ctx context.Context, id ulid.ID) (ent.Noder, error) {
 	n, err := r.client.Noder(ctx, id, ent.WithNodeType(ent.IDToType))
 	if err != nil {

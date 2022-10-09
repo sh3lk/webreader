@@ -28,14 +28,13 @@ func (TodoMixin) Fields() []ent.Field {
 		field.String("user_id").
 			GoType(ulid.ID("")).
 			Optional(),
-		field.String("name").Default(""),
+		field.String("name"),
 		field.Enum("status").
 			NamedValues(
 				"InProgress", "IN_PROGRESS",
 				"Completed", "COMPLETED",
-			).
-			Default("IN_PROGRESS"),
-		field.Int("priority").Default(0),
+			),
+		field.Int("priority"),
 	}
 }
 

@@ -1,12 +1,10 @@
 package datastore
 
 import (
+	"github.com/go-sql-driver/mysql"
+	_ "github.com/mattn/go-sqlite3"
 	"webreader/config"
 	"webreader/ent"
-
-	"entgo.io/ent/dialect"
-
-	"github.com/go-sql-driver/mysql"
 )
 
 // New returns data source name
@@ -33,7 +31,8 @@ func NewClient() (*ent.Client, error) {
 	var entOptions []ent.Option
 	entOptions = append(entOptions, ent.Debug())
 
-	dsn := New()
+	//dsn := New()
 
-	return ent.Open(dialect.MySQL, dsn, entOptions...)
+	//return ent.Open(dialect.MySQL, dsn, entOptions...)
+	return ent.Open("sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 }
