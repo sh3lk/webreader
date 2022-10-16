@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"sync"
 	"time"
+	"webreader/ent/category"
 	"webreader/ent/predicate"
+	"webreader/ent/ranobe"
 	"webreader/ent/schema/ulid"
 	"webreader/ent/todo"
 	"webreader/ent/user"
@@ -25,9 +27,1353 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeTodo = "Todo"
-	TypeUser = "User"
+	TypeCategory = "Category"
+	TypeRanobe   = "Ranobe"
+	TypeTodo     = "Todo"
+	TypeUser     = "User"
 )
+
+// CategoryMutation represents an operation that mutates the Category nodes in the graph.
+type CategoryMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *ulid.ID
+	created_at     *time.Time
+	updated_at     *time.Time
+	name           *string
+	description    *string
+	clearedFields  map[string]struct{}
+	ranobes        map[ulid.ID]struct{}
+	removedranobes map[ulid.ID]struct{}
+	clearedranobes bool
+	done           bool
+	oldValue       func(context.Context) (*Category, error)
+	predicates     []predicate.Category
+}
+
+var _ ent.Mutation = (*CategoryMutation)(nil)
+
+// categoryOption allows management of the mutation configuration using functional options.
+type categoryOption func(*CategoryMutation)
+
+// newCategoryMutation creates new mutation for the Category entity.
+func newCategoryMutation(c config, op Op, opts ...categoryOption) *CategoryMutation {
+	m := &CategoryMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeCategory,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withCategoryID sets the ID field of the mutation.
+func withCategoryID(id ulid.ID) categoryOption {
+	return func(m *CategoryMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Category
+		)
+		m.oldValue = func(ctx context.Context) (*Category, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Category.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withCategory sets the old Category of the mutation.
+func withCategory(node *Category) categoryOption {
+	return func(m *CategoryMutation) {
+		m.oldValue = func(context.Context) (*Category, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m CategoryMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m CategoryMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Category entities.
+func (m *CategoryMutation) SetID(id ulid.ID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *CategoryMutation) ID() (id ulid.ID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *CategoryMutation) IDs(ctx context.Context) ([]ulid.ID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []ulid.ID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Category.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *CategoryMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *CategoryMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Category entity.
+// If the Category object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CategoryMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *CategoryMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *CategoryMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *CategoryMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the Category entity.
+// If the Category object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CategoryMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *CategoryMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetName sets the "name" field.
+func (m *CategoryMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *CategoryMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the Category entity.
+// If the Category object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CategoryMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *CategoryMutation) ResetName() {
+	m.name = nil
+}
+
+// SetDescription sets the "description" field.
+func (m *CategoryMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *CategoryMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the Category entity.
+// If the Category object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CategoryMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *CategoryMutation) ResetDescription() {
+	m.description = nil
+}
+
+// AddRanobeIDs adds the "ranobes" edge to the Ranobe entity by ids.
+func (m *CategoryMutation) AddRanobeIDs(ids ...ulid.ID) {
+	if m.ranobes == nil {
+		m.ranobes = make(map[ulid.ID]struct{})
+	}
+	for i := range ids {
+		m.ranobes[ids[i]] = struct{}{}
+	}
+}
+
+// ClearRanobes clears the "ranobes" edge to the Ranobe entity.
+func (m *CategoryMutation) ClearRanobes() {
+	m.clearedranobes = true
+}
+
+// RanobesCleared reports if the "ranobes" edge to the Ranobe entity was cleared.
+func (m *CategoryMutation) RanobesCleared() bool {
+	return m.clearedranobes
+}
+
+// RemoveRanobeIDs removes the "ranobes" edge to the Ranobe entity by IDs.
+func (m *CategoryMutation) RemoveRanobeIDs(ids ...ulid.ID) {
+	if m.removedranobes == nil {
+		m.removedranobes = make(map[ulid.ID]struct{})
+	}
+	for i := range ids {
+		delete(m.ranobes, ids[i])
+		m.removedranobes[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedRanobes returns the removed IDs of the "ranobes" edge to the Ranobe entity.
+func (m *CategoryMutation) RemovedRanobesIDs() (ids []ulid.ID) {
+	for id := range m.removedranobes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// RanobesIDs returns the "ranobes" edge IDs in the mutation.
+func (m *CategoryMutation) RanobesIDs() (ids []ulid.ID) {
+	for id := range m.ranobes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetRanobes resets all changes to the "ranobes" edge.
+func (m *CategoryMutation) ResetRanobes() {
+	m.ranobes = nil
+	m.clearedranobes = false
+	m.removedranobes = nil
+}
+
+// Where appends a list predicates to the CategoryMutation builder.
+func (m *CategoryMutation) Where(ps ...predicate.Category) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *CategoryMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (Category).
+func (m *CategoryMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *CategoryMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.created_at != nil {
+		fields = append(fields, category.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, category.FieldUpdatedAt)
+	}
+	if m.name != nil {
+		fields = append(fields, category.FieldName)
+	}
+	if m.description != nil {
+		fields = append(fields, category.FieldDescription)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *CategoryMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case category.FieldCreatedAt:
+		return m.CreatedAt()
+	case category.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case category.FieldName:
+		return m.Name()
+	case category.FieldDescription:
+		return m.Description()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *CategoryMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case category.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case category.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case category.FieldName:
+		return m.OldName(ctx)
+	case category.FieldDescription:
+		return m.OldDescription(ctx)
+	}
+	return nil, fmt.Errorf("unknown Category field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CategoryMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case category.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case category.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case category.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case category.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Category field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *CategoryMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *CategoryMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CategoryMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Category numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *CategoryMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *CategoryMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *CategoryMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Category nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *CategoryMutation) ResetField(name string) error {
+	switch name {
+	case category.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case category.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case category.FieldName:
+		m.ResetName()
+		return nil
+	case category.FieldDescription:
+		m.ResetDescription()
+		return nil
+	}
+	return fmt.Errorf("unknown Category field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *CategoryMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.ranobes != nil {
+		edges = append(edges, category.EdgeRanobes)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *CategoryMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case category.EdgeRanobes:
+		ids := make([]ent.Value, 0, len(m.ranobes))
+		for id := range m.ranobes {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *CategoryMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.removedranobes != nil {
+		edges = append(edges, category.EdgeRanobes)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *CategoryMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case category.EdgeRanobes:
+		ids := make([]ent.Value, 0, len(m.removedranobes))
+		for id := range m.removedranobes {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *CategoryMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedranobes {
+		edges = append(edges, category.EdgeRanobes)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *CategoryMutation) EdgeCleared(name string) bool {
+	switch name {
+	case category.EdgeRanobes:
+		return m.clearedranobes
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *CategoryMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Category unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *CategoryMutation) ResetEdge(name string) error {
+	switch name {
+	case category.EdgeRanobes:
+		m.ResetRanobes()
+		return nil
+	}
+	return fmt.Errorf("unknown Category edge %s", name)
+}
+
+// RanobeMutation represents an operation that mutates the Ranobe nodes in the graph.
+type RanobeMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *ulid.ID
+	created_at        *time.Time
+	updated_at        *time.Time
+	name              *string
+	engName           *string
+	rusName           *string
+	summary           *string
+	releaseDate       *int
+	addreleaseDate    *int
+	clearedFields     map[string]struct{}
+	categories        map[ulid.ID]struct{}
+	removedcategories map[ulid.ID]struct{}
+	clearedcategories bool
+	done              bool
+	oldValue          func(context.Context) (*Ranobe, error)
+	predicates        []predicate.Ranobe
+}
+
+var _ ent.Mutation = (*RanobeMutation)(nil)
+
+// ranobeOption allows management of the mutation configuration using functional options.
+type ranobeOption func(*RanobeMutation)
+
+// newRanobeMutation creates new mutation for the Ranobe entity.
+func newRanobeMutation(c config, op Op, opts ...ranobeOption) *RanobeMutation {
+	m := &RanobeMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeRanobe,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withRanobeID sets the ID field of the mutation.
+func withRanobeID(id ulid.ID) ranobeOption {
+	return func(m *RanobeMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Ranobe
+		)
+		m.oldValue = func(ctx context.Context) (*Ranobe, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Ranobe.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withRanobe sets the old Ranobe of the mutation.
+func withRanobe(node *Ranobe) ranobeOption {
+	return func(m *RanobeMutation) {
+		m.oldValue = func(context.Context) (*Ranobe, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m RanobeMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m RanobeMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Ranobe entities.
+func (m *RanobeMutation) SetID(id ulid.ID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *RanobeMutation) ID() (id ulid.ID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *RanobeMutation) IDs(ctx context.Context) ([]ulid.ID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []ulid.ID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Ranobe.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *RanobeMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *RanobeMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Ranobe entity.
+// If the Ranobe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RanobeMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *RanobeMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *RanobeMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *RanobeMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the Ranobe entity.
+// If the Ranobe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RanobeMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *RanobeMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetName sets the "name" field.
+func (m *RanobeMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *RanobeMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the Ranobe entity.
+// If the Ranobe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RanobeMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *RanobeMutation) ResetName() {
+	m.name = nil
+}
+
+// SetEngName sets the "engName" field.
+func (m *RanobeMutation) SetEngName(s string) {
+	m.engName = &s
+}
+
+// EngName returns the value of the "engName" field in the mutation.
+func (m *RanobeMutation) EngName() (r string, exists bool) {
+	v := m.engName
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEngName returns the old "engName" field's value of the Ranobe entity.
+// If the Ranobe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RanobeMutation) OldEngName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEngName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEngName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEngName: %w", err)
+	}
+	return oldValue.EngName, nil
+}
+
+// ResetEngName resets all changes to the "engName" field.
+func (m *RanobeMutation) ResetEngName() {
+	m.engName = nil
+}
+
+// SetRusName sets the "rusName" field.
+func (m *RanobeMutation) SetRusName(s string) {
+	m.rusName = &s
+}
+
+// RusName returns the value of the "rusName" field in the mutation.
+func (m *RanobeMutation) RusName() (r string, exists bool) {
+	v := m.rusName
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRusName returns the old "rusName" field's value of the Ranobe entity.
+// If the Ranobe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RanobeMutation) OldRusName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRusName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRusName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRusName: %w", err)
+	}
+	return oldValue.RusName, nil
+}
+
+// ResetRusName resets all changes to the "rusName" field.
+func (m *RanobeMutation) ResetRusName() {
+	m.rusName = nil
+}
+
+// SetSummary sets the "summary" field.
+func (m *RanobeMutation) SetSummary(s string) {
+	m.summary = &s
+}
+
+// Summary returns the value of the "summary" field in the mutation.
+func (m *RanobeMutation) Summary() (r string, exists bool) {
+	v := m.summary
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSummary returns the old "summary" field's value of the Ranobe entity.
+// If the Ranobe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RanobeMutation) OldSummary(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSummary is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSummary requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSummary: %w", err)
+	}
+	return oldValue.Summary, nil
+}
+
+// ResetSummary resets all changes to the "summary" field.
+func (m *RanobeMutation) ResetSummary() {
+	m.summary = nil
+}
+
+// SetReleaseDate sets the "releaseDate" field.
+func (m *RanobeMutation) SetReleaseDate(i int) {
+	m.releaseDate = &i
+	m.addreleaseDate = nil
+}
+
+// ReleaseDate returns the value of the "releaseDate" field in the mutation.
+func (m *RanobeMutation) ReleaseDate() (r int, exists bool) {
+	v := m.releaseDate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReleaseDate returns the old "releaseDate" field's value of the Ranobe entity.
+// If the Ranobe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RanobeMutation) OldReleaseDate(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReleaseDate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReleaseDate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReleaseDate: %w", err)
+	}
+	return oldValue.ReleaseDate, nil
+}
+
+// AddReleaseDate adds i to the "releaseDate" field.
+func (m *RanobeMutation) AddReleaseDate(i int) {
+	if m.addreleaseDate != nil {
+		*m.addreleaseDate += i
+	} else {
+		m.addreleaseDate = &i
+	}
+}
+
+// AddedReleaseDate returns the value that was added to the "releaseDate" field in this mutation.
+func (m *RanobeMutation) AddedReleaseDate() (r int, exists bool) {
+	v := m.addreleaseDate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetReleaseDate resets all changes to the "releaseDate" field.
+func (m *RanobeMutation) ResetReleaseDate() {
+	m.releaseDate = nil
+	m.addreleaseDate = nil
+}
+
+// AddCategoryIDs adds the "categories" edge to the Category entity by ids.
+func (m *RanobeMutation) AddCategoryIDs(ids ...ulid.ID) {
+	if m.categories == nil {
+		m.categories = make(map[ulid.ID]struct{})
+	}
+	for i := range ids {
+		m.categories[ids[i]] = struct{}{}
+	}
+}
+
+// ClearCategories clears the "categories" edge to the Category entity.
+func (m *RanobeMutation) ClearCategories() {
+	m.clearedcategories = true
+}
+
+// CategoriesCleared reports if the "categories" edge to the Category entity was cleared.
+func (m *RanobeMutation) CategoriesCleared() bool {
+	return m.clearedcategories
+}
+
+// RemoveCategoryIDs removes the "categories" edge to the Category entity by IDs.
+func (m *RanobeMutation) RemoveCategoryIDs(ids ...ulid.ID) {
+	if m.removedcategories == nil {
+		m.removedcategories = make(map[ulid.ID]struct{})
+	}
+	for i := range ids {
+		delete(m.categories, ids[i])
+		m.removedcategories[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedCategories returns the removed IDs of the "categories" edge to the Category entity.
+func (m *RanobeMutation) RemovedCategoriesIDs() (ids []ulid.ID) {
+	for id := range m.removedcategories {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// CategoriesIDs returns the "categories" edge IDs in the mutation.
+func (m *RanobeMutation) CategoriesIDs() (ids []ulid.ID) {
+	for id := range m.categories {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetCategories resets all changes to the "categories" edge.
+func (m *RanobeMutation) ResetCategories() {
+	m.categories = nil
+	m.clearedcategories = false
+	m.removedcategories = nil
+}
+
+// Where appends a list predicates to the RanobeMutation builder.
+func (m *RanobeMutation) Where(ps ...predicate.Ranobe) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *RanobeMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (Ranobe).
+func (m *RanobeMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *RanobeMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.created_at != nil {
+		fields = append(fields, ranobe.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, ranobe.FieldUpdatedAt)
+	}
+	if m.name != nil {
+		fields = append(fields, ranobe.FieldName)
+	}
+	if m.engName != nil {
+		fields = append(fields, ranobe.FieldEngName)
+	}
+	if m.rusName != nil {
+		fields = append(fields, ranobe.FieldRusName)
+	}
+	if m.summary != nil {
+		fields = append(fields, ranobe.FieldSummary)
+	}
+	if m.releaseDate != nil {
+		fields = append(fields, ranobe.FieldReleaseDate)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *RanobeMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case ranobe.FieldCreatedAt:
+		return m.CreatedAt()
+	case ranobe.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case ranobe.FieldName:
+		return m.Name()
+	case ranobe.FieldEngName:
+		return m.EngName()
+	case ranobe.FieldRusName:
+		return m.RusName()
+	case ranobe.FieldSummary:
+		return m.Summary()
+	case ranobe.FieldReleaseDate:
+		return m.ReleaseDate()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *RanobeMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case ranobe.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case ranobe.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case ranobe.FieldName:
+		return m.OldName(ctx)
+	case ranobe.FieldEngName:
+		return m.OldEngName(ctx)
+	case ranobe.FieldRusName:
+		return m.OldRusName(ctx)
+	case ranobe.FieldSummary:
+		return m.OldSummary(ctx)
+	case ranobe.FieldReleaseDate:
+		return m.OldReleaseDate(ctx)
+	}
+	return nil, fmt.Errorf("unknown Ranobe field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RanobeMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case ranobe.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case ranobe.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case ranobe.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case ranobe.FieldEngName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEngName(v)
+		return nil
+	case ranobe.FieldRusName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRusName(v)
+		return nil
+	case ranobe.FieldSummary:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSummary(v)
+		return nil
+	case ranobe.FieldReleaseDate:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReleaseDate(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Ranobe field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *RanobeMutation) AddedFields() []string {
+	var fields []string
+	if m.addreleaseDate != nil {
+		fields = append(fields, ranobe.FieldReleaseDate)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *RanobeMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case ranobe.FieldReleaseDate:
+		return m.AddedReleaseDate()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RanobeMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case ranobe.FieldReleaseDate:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddReleaseDate(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Ranobe numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *RanobeMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *RanobeMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *RanobeMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Ranobe nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *RanobeMutation) ResetField(name string) error {
+	switch name {
+	case ranobe.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case ranobe.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case ranobe.FieldName:
+		m.ResetName()
+		return nil
+	case ranobe.FieldEngName:
+		m.ResetEngName()
+		return nil
+	case ranobe.FieldRusName:
+		m.ResetRusName()
+		return nil
+	case ranobe.FieldSummary:
+		m.ResetSummary()
+		return nil
+	case ranobe.FieldReleaseDate:
+		m.ResetReleaseDate()
+		return nil
+	}
+	return fmt.Errorf("unknown Ranobe field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *RanobeMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.categories != nil {
+		edges = append(edges, ranobe.EdgeCategories)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *RanobeMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case ranobe.EdgeCategories:
+		ids := make([]ent.Value, 0, len(m.categories))
+		for id := range m.categories {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *RanobeMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.removedcategories != nil {
+		edges = append(edges, ranobe.EdgeCategories)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *RanobeMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case ranobe.EdgeCategories:
+		ids := make([]ent.Value, 0, len(m.removedcategories))
+		for id := range m.removedcategories {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *RanobeMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedcategories {
+		edges = append(edges, ranobe.EdgeCategories)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *RanobeMutation) EdgeCleared(name string) bool {
+	switch name {
+	case ranobe.EdgeCategories:
+		return m.clearedcategories
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *RanobeMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Ranobe unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *RanobeMutation) ResetEdge(name string) error {
+	switch name {
+	case ranobe.EdgeCategories:
+		m.ResetCategories()
+		return nil
+	}
+	return fmt.Errorf("unknown Ranobe edge %s", name)
+}
 
 // TodoMutation represents an operation that mutates the Todo nodes in the graph.
 type TodoMutation struct {
@@ -36,7 +1382,6 @@ type TodoMutation struct {
 	typ           string
 	id            *ulid.ID
 	name          *string
-	status        *todo.Status
 	priority      *int
 	addpriority   *int
 	created_at    *time.Time
@@ -238,42 +1583,6 @@ func (m *TodoMutation) ResetName() {
 	m.name = nil
 }
 
-// SetStatus sets the "status" field.
-func (m *TodoMutation) SetStatus(t todo.Status) {
-	m.status = &t
-}
-
-// Status returns the value of the "status" field in the mutation.
-func (m *TodoMutation) Status() (r todo.Status, exists bool) {
-	v := m.status
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldStatus returns the old "status" field's value of the Todo entity.
-// If the Todo object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TodoMutation) OldStatus(ctx context.Context) (v todo.Status, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldStatus requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
-	}
-	return oldValue.Status, nil
-}
-
-// ResetStatus resets all changes to the "status" field.
-func (m *TodoMutation) ResetStatus() {
-	m.status = nil
-}
-
 // SetPriority sets the "priority" field.
 func (m *TodoMutation) SetPriority(i int) {
 	m.priority = &i
@@ -447,15 +1756,12 @@ func (m *TodoMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TodoMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 5)
 	if m.user != nil {
 		fields = append(fields, todo.FieldUserID)
 	}
 	if m.name != nil {
 		fields = append(fields, todo.FieldName)
-	}
-	if m.status != nil {
-		fields = append(fields, todo.FieldStatus)
 	}
 	if m.priority != nil {
 		fields = append(fields, todo.FieldPriority)
@@ -478,8 +1784,6 @@ func (m *TodoMutation) Field(name string) (ent.Value, bool) {
 		return m.UserID()
 	case todo.FieldName:
 		return m.Name()
-	case todo.FieldStatus:
-		return m.Status()
 	case todo.FieldPriority:
 		return m.Priority()
 	case todo.FieldCreatedAt:
@@ -499,8 +1803,6 @@ func (m *TodoMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldUserID(ctx)
 	case todo.FieldName:
 		return m.OldName(ctx)
-	case todo.FieldStatus:
-		return m.OldStatus(ctx)
 	case todo.FieldPriority:
 		return m.OldPriority(ctx)
 	case todo.FieldCreatedAt:
@@ -529,13 +1831,6 @@ func (m *TodoMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
-		return nil
-	case todo.FieldStatus:
-		v, ok := value.(todo.Status)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetStatus(v)
 		return nil
 	case todo.FieldPriority:
 		v, ok := value.(int)
@@ -636,9 +1931,6 @@ func (m *TodoMutation) ResetField(name string) error {
 		return nil
 	case todo.FieldName:
 		m.ResetName()
-		return nil
-	case todo.FieldStatus:
-		m.ResetStatus()
 		return nil
 	case todo.FieldPriority:
 		m.ResetPriority()

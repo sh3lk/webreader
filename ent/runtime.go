@@ -4,6 +4,8 @@ package ent
 
 import (
 	"time"
+	"webreader/ent/category"
+	"webreader/ent/ranobe"
 	"webreader/ent/schema"
 	"webreader/ent/schema/ulid"
 	"webreader/ent/todo"
@@ -14,6 +16,48 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	categoryMixin := schema.Category{}.Mixin()
+	categoryMixinFields0 := categoryMixin[0].Fields()
+	_ = categoryMixinFields0
+	categoryMixinFields2 := categoryMixin[2].Fields()
+	_ = categoryMixinFields2
+	categoryFields := schema.Category{}.Fields()
+	_ = categoryFields
+	// categoryDescCreatedAt is the schema descriptor for created_at field.
+	categoryDescCreatedAt := categoryMixinFields2[0].Descriptor()
+	// category.DefaultCreatedAt holds the default value on creation for the created_at field.
+	category.DefaultCreatedAt = categoryDescCreatedAt.Default.(func() time.Time)
+	// categoryDescUpdatedAt is the schema descriptor for updated_at field.
+	categoryDescUpdatedAt := categoryMixinFields2[1].Descriptor()
+	// category.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	category.DefaultUpdatedAt = categoryDescUpdatedAt.Default.(func() time.Time)
+	// categoryDescName is the schema descriptor for name field.
+	categoryDescName := categoryFields[0].Descriptor()
+	// category.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	category.NameValidator = categoryDescName.Validators[0].(func(string) error)
+	// categoryDescID is the schema descriptor for id field.
+	categoryDescID := categoryMixinFields0[0].Descriptor()
+	// category.DefaultID holds the default value on creation for the id field.
+	category.DefaultID = categoryDescID.Default.(func() ulid.ID)
+	ranobeMixin := schema.Ranobe{}.Mixin()
+	ranobeMixinFields0 := ranobeMixin[0].Fields()
+	_ = ranobeMixinFields0
+	ranobeMixinFields2 := ranobeMixin[2].Fields()
+	_ = ranobeMixinFields2
+	ranobeFields := schema.Ranobe{}.Fields()
+	_ = ranobeFields
+	// ranobeDescCreatedAt is the schema descriptor for created_at field.
+	ranobeDescCreatedAt := ranobeMixinFields2[0].Descriptor()
+	// ranobe.DefaultCreatedAt holds the default value on creation for the created_at field.
+	ranobe.DefaultCreatedAt = ranobeDescCreatedAt.Default.(func() time.Time)
+	// ranobeDescUpdatedAt is the schema descriptor for updated_at field.
+	ranobeDescUpdatedAt := ranobeMixinFields2[1].Descriptor()
+	// ranobe.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	ranobe.DefaultUpdatedAt = ranobeDescUpdatedAt.Default.(func() time.Time)
+	// ranobeDescID is the schema descriptor for id field.
+	ranobeDescID := ranobeMixinFields0[0].Descriptor()
+	// ranobe.DefaultID holds the default value on creation for the id field.
+	ranobe.DefaultID = ranobeDescID.Default.(func() ulid.ID)
 	todoMixin := schema.Todo{}.Mixin()
 	todoMixinFields0 := todoMixin[0].Fields()
 	_ = todoMixinFields0

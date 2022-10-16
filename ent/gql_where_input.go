@@ -6,11 +6,799 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	"webreader/ent/category"
 	"webreader/ent/predicate"
+	"webreader/ent/ranobe"
 	"webreader/ent/schema/ulid"
 	"webreader/ent/todo"
 	"webreader/ent/user"
 )
+
+// CategoryWhereInput represents a where input for filtering Category queries.
+type CategoryWhereInput struct {
+	Predicates []predicate.Category  `json:"-"`
+	Not        *CategoryWhereInput   `json:"not,omitempty"`
+	Or         []*CategoryWhereInput `json:"or,omitempty"`
+	And        []*CategoryWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *ulid.ID  `json:"id,omitempty"`
+	IDNEQ   *ulid.ID  `json:"idNEQ,omitempty"`
+	IDIn    []ulid.ID `json:"idIn,omitempty"`
+	IDNotIn []ulid.ID `json:"idNotIn,omitempty"`
+	IDGT    *ulid.ID  `json:"idGT,omitempty"`
+	IDGTE   *ulid.ID  `json:"idGTE,omitempty"`
+	IDLT    *ulid.ID  `json:"idLT,omitempty"`
+	IDLTE   *ulid.ID  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "updated_at" field predicates.
+	UpdatedAt      *time.Time  `json:"updatedAt,omitempty"`
+	UpdatedAtNEQ   *time.Time  `json:"updatedAtNEQ,omitempty"`
+	UpdatedAtIn    []time.Time `json:"updatedAtIn,omitempty"`
+	UpdatedAtNotIn []time.Time `json:"updatedAtNotIn,omitempty"`
+	UpdatedAtGT    *time.Time  `json:"updatedAtGT,omitempty"`
+	UpdatedAtGTE   *time.Time  `json:"updatedAtGTE,omitempty"`
+	UpdatedAtLT    *time.Time  `json:"updatedAtLT,omitempty"`
+	UpdatedAtLTE   *time.Time  `json:"updatedAtLTE,omitempty"`
+
+	// "name" field predicates.
+	Name             *string  `json:"name,omitempty"`
+	NameNEQ          *string  `json:"nameNEQ,omitempty"`
+	NameIn           []string `json:"nameIn,omitempty"`
+	NameNotIn        []string `json:"nameNotIn,omitempty"`
+	NameGT           *string  `json:"nameGT,omitempty"`
+	NameGTE          *string  `json:"nameGTE,omitempty"`
+	NameLT           *string  `json:"nameLT,omitempty"`
+	NameLTE          *string  `json:"nameLTE,omitempty"`
+	NameContains     *string  `json:"nameContains,omitempty"`
+	NameHasPrefix    *string  `json:"nameHasPrefix,omitempty"`
+	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
+	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
+	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
+
+	// "description" field predicates.
+	Description             *string  `json:"description,omitempty"`
+	DescriptionNEQ          *string  `json:"descriptionNEQ,omitempty"`
+	DescriptionIn           []string `json:"descriptionIn,omitempty"`
+	DescriptionNotIn        []string `json:"descriptionNotIn,omitempty"`
+	DescriptionGT           *string  `json:"descriptionGT,omitempty"`
+	DescriptionGTE          *string  `json:"descriptionGTE,omitempty"`
+	DescriptionLT           *string  `json:"descriptionLT,omitempty"`
+	DescriptionLTE          *string  `json:"descriptionLTE,omitempty"`
+	DescriptionContains     *string  `json:"descriptionContains,omitempty"`
+	DescriptionHasPrefix    *string  `json:"descriptionHasPrefix,omitempty"`
+	DescriptionHasSuffix    *string  `json:"descriptionHasSuffix,omitempty"`
+	DescriptionEqualFold    *string  `json:"descriptionEqualFold,omitempty"`
+	DescriptionContainsFold *string  `json:"descriptionContainsFold,omitempty"`
+
+	// "ranobes" edge predicates.
+	HasRanobes     *bool               `json:"hasRanobes,omitempty"`
+	HasRanobesWith []*RanobeWhereInput `json:"hasRanobesWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *CategoryWhereInput) AddPredicates(predicates ...predicate.Category) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the CategoryWhereInput filter on the CategoryQuery builder.
+func (i *CategoryWhereInput) Filter(q *CategoryQuery) (*CategoryQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyCategoryWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyCategoryWhereInput is returned in case the CategoryWhereInput is empty.
+var ErrEmptyCategoryWhereInput = errors.New("ent: empty predicate CategoryWhereInput")
+
+// P returns a predicate for filtering categories.
+// An error is returned if the input is empty or invalid.
+func (i *CategoryWhereInput) P() (predicate.Category, error) {
+	var predicates []predicate.Category
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, category.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.Category, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, category.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.Category, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, category.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, category.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, category.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, category.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, category.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, category.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, category.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, category.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, category.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, category.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, category.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, category.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, category.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, category.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, category.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, category.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, category.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.UpdatedAt != nil {
+		predicates = append(predicates, category.UpdatedAtEQ(*i.UpdatedAt))
+	}
+	if i.UpdatedAtNEQ != nil {
+		predicates = append(predicates, category.UpdatedAtNEQ(*i.UpdatedAtNEQ))
+	}
+	if len(i.UpdatedAtIn) > 0 {
+		predicates = append(predicates, category.UpdatedAtIn(i.UpdatedAtIn...))
+	}
+	if len(i.UpdatedAtNotIn) > 0 {
+		predicates = append(predicates, category.UpdatedAtNotIn(i.UpdatedAtNotIn...))
+	}
+	if i.UpdatedAtGT != nil {
+		predicates = append(predicates, category.UpdatedAtGT(*i.UpdatedAtGT))
+	}
+	if i.UpdatedAtGTE != nil {
+		predicates = append(predicates, category.UpdatedAtGTE(*i.UpdatedAtGTE))
+	}
+	if i.UpdatedAtLT != nil {
+		predicates = append(predicates, category.UpdatedAtLT(*i.UpdatedAtLT))
+	}
+	if i.UpdatedAtLTE != nil {
+		predicates = append(predicates, category.UpdatedAtLTE(*i.UpdatedAtLTE))
+	}
+	if i.Name != nil {
+		predicates = append(predicates, category.NameEQ(*i.Name))
+	}
+	if i.NameNEQ != nil {
+		predicates = append(predicates, category.NameNEQ(*i.NameNEQ))
+	}
+	if len(i.NameIn) > 0 {
+		predicates = append(predicates, category.NameIn(i.NameIn...))
+	}
+	if len(i.NameNotIn) > 0 {
+		predicates = append(predicates, category.NameNotIn(i.NameNotIn...))
+	}
+	if i.NameGT != nil {
+		predicates = append(predicates, category.NameGT(*i.NameGT))
+	}
+	if i.NameGTE != nil {
+		predicates = append(predicates, category.NameGTE(*i.NameGTE))
+	}
+	if i.NameLT != nil {
+		predicates = append(predicates, category.NameLT(*i.NameLT))
+	}
+	if i.NameLTE != nil {
+		predicates = append(predicates, category.NameLTE(*i.NameLTE))
+	}
+	if i.NameContains != nil {
+		predicates = append(predicates, category.NameContains(*i.NameContains))
+	}
+	if i.NameHasPrefix != nil {
+		predicates = append(predicates, category.NameHasPrefix(*i.NameHasPrefix))
+	}
+	if i.NameHasSuffix != nil {
+		predicates = append(predicates, category.NameHasSuffix(*i.NameHasSuffix))
+	}
+	if i.NameEqualFold != nil {
+		predicates = append(predicates, category.NameEqualFold(*i.NameEqualFold))
+	}
+	if i.NameContainsFold != nil {
+		predicates = append(predicates, category.NameContainsFold(*i.NameContainsFold))
+	}
+	if i.Description != nil {
+		predicates = append(predicates, category.DescriptionEQ(*i.Description))
+	}
+	if i.DescriptionNEQ != nil {
+		predicates = append(predicates, category.DescriptionNEQ(*i.DescriptionNEQ))
+	}
+	if len(i.DescriptionIn) > 0 {
+		predicates = append(predicates, category.DescriptionIn(i.DescriptionIn...))
+	}
+	if len(i.DescriptionNotIn) > 0 {
+		predicates = append(predicates, category.DescriptionNotIn(i.DescriptionNotIn...))
+	}
+	if i.DescriptionGT != nil {
+		predicates = append(predicates, category.DescriptionGT(*i.DescriptionGT))
+	}
+	if i.DescriptionGTE != nil {
+		predicates = append(predicates, category.DescriptionGTE(*i.DescriptionGTE))
+	}
+	if i.DescriptionLT != nil {
+		predicates = append(predicates, category.DescriptionLT(*i.DescriptionLT))
+	}
+	if i.DescriptionLTE != nil {
+		predicates = append(predicates, category.DescriptionLTE(*i.DescriptionLTE))
+	}
+	if i.DescriptionContains != nil {
+		predicates = append(predicates, category.DescriptionContains(*i.DescriptionContains))
+	}
+	if i.DescriptionHasPrefix != nil {
+		predicates = append(predicates, category.DescriptionHasPrefix(*i.DescriptionHasPrefix))
+	}
+	if i.DescriptionHasSuffix != nil {
+		predicates = append(predicates, category.DescriptionHasSuffix(*i.DescriptionHasSuffix))
+	}
+	if i.DescriptionEqualFold != nil {
+		predicates = append(predicates, category.DescriptionEqualFold(*i.DescriptionEqualFold))
+	}
+	if i.DescriptionContainsFold != nil {
+		predicates = append(predicates, category.DescriptionContainsFold(*i.DescriptionContainsFold))
+	}
+
+	if i.HasRanobes != nil {
+		p := category.HasRanobes()
+		if !*i.HasRanobes {
+			p = category.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasRanobesWith) > 0 {
+		with := make([]predicate.Ranobe, 0, len(i.HasRanobesWith))
+		for _, w := range i.HasRanobesWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasRanobesWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, category.HasRanobesWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyCategoryWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return category.And(predicates...), nil
+	}
+}
+
+// RanobeWhereInput represents a where input for filtering Ranobe queries.
+type RanobeWhereInput struct {
+	Predicates []predicate.Ranobe  `json:"-"`
+	Not        *RanobeWhereInput   `json:"not,omitempty"`
+	Or         []*RanobeWhereInput `json:"or,omitempty"`
+	And        []*RanobeWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *ulid.ID  `json:"id,omitempty"`
+	IDNEQ   *ulid.ID  `json:"idNEQ,omitempty"`
+	IDIn    []ulid.ID `json:"idIn,omitempty"`
+	IDNotIn []ulid.ID `json:"idNotIn,omitempty"`
+	IDGT    *ulid.ID  `json:"idGT,omitempty"`
+	IDGTE   *ulid.ID  `json:"idGTE,omitempty"`
+	IDLT    *ulid.ID  `json:"idLT,omitempty"`
+	IDLTE   *ulid.ID  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "updated_at" field predicates.
+	UpdatedAt      *time.Time  `json:"updatedAt,omitempty"`
+	UpdatedAtNEQ   *time.Time  `json:"updatedAtNEQ,omitempty"`
+	UpdatedAtIn    []time.Time `json:"updatedAtIn,omitempty"`
+	UpdatedAtNotIn []time.Time `json:"updatedAtNotIn,omitempty"`
+	UpdatedAtGT    *time.Time  `json:"updatedAtGT,omitempty"`
+	UpdatedAtGTE   *time.Time  `json:"updatedAtGTE,omitempty"`
+	UpdatedAtLT    *time.Time  `json:"updatedAtLT,omitempty"`
+	UpdatedAtLTE   *time.Time  `json:"updatedAtLTE,omitempty"`
+
+	// "name" field predicates.
+	Name             *string  `json:"name,omitempty"`
+	NameNEQ          *string  `json:"nameNEQ,omitempty"`
+	NameIn           []string `json:"nameIn,omitempty"`
+	NameNotIn        []string `json:"nameNotIn,omitempty"`
+	NameGT           *string  `json:"nameGT,omitempty"`
+	NameGTE          *string  `json:"nameGTE,omitempty"`
+	NameLT           *string  `json:"nameLT,omitempty"`
+	NameLTE          *string  `json:"nameLTE,omitempty"`
+	NameContains     *string  `json:"nameContains,omitempty"`
+	NameHasPrefix    *string  `json:"nameHasPrefix,omitempty"`
+	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
+	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
+	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
+
+	// "engName" field predicates.
+	EngName             *string  `json:"engname,omitempty"`
+	EngNameNEQ          *string  `json:"engnameNEQ,omitempty"`
+	EngNameIn           []string `json:"engnameIn,omitempty"`
+	EngNameNotIn        []string `json:"engnameNotIn,omitempty"`
+	EngNameGT           *string  `json:"engnameGT,omitempty"`
+	EngNameGTE          *string  `json:"engnameGTE,omitempty"`
+	EngNameLT           *string  `json:"engnameLT,omitempty"`
+	EngNameLTE          *string  `json:"engnameLTE,omitempty"`
+	EngNameContains     *string  `json:"engnameContains,omitempty"`
+	EngNameHasPrefix    *string  `json:"engnameHasPrefix,omitempty"`
+	EngNameHasSuffix    *string  `json:"engnameHasSuffix,omitempty"`
+	EngNameEqualFold    *string  `json:"engnameEqualFold,omitempty"`
+	EngNameContainsFold *string  `json:"engnameContainsFold,omitempty"`
+
+	// "rusName" field predicates.
+	RusName             *string  `json:"rusname,omitempty"`
+	RusNameNEQ          *string  `json:"rusnameNEQ,omitempty"`
+	RusNameIn           []string `json:"rusnameIn,omitempty"`
+	RusNameNotIn        []string `json:"rusnameNotIn,omitempty"`
+	RusNameGT           *string  `json:"rusnameGT,omitempty"`
+	RusNameGTE          *string  `json:"rusnameGTE,omitempty"`
+	RusNameLT           *string  `json:"rusnameLT,omitempty"`
+	RusNameLTE          *string  `json:"rusnameLTE,omitempty"`
+	RusNameContains     *string  `json:"rusnameContains,omitempty"`
+	RusNameHasPrefix    *string  `json:"rusnameHasPrefix,omitempty"`
+	RusNameHasSuffix    *string  `json:"rusnameHasSuffix,omitempty"`
+	RusNameEqualFold    *string  `json:"rusnameEqualFold,omitempty"`
+	RusNameContainsFold *string  `json:"rusnameContainsFold,omitempty"`
+
+	// "summary" field predicates.
+	Summary             *string  `json:"summary,omitempty"`
+	SummaryNEQ          *string  `json:"summaryNEQ,omitempty"`
+	SummaryIn           []string `json:"summaryIn,omitempty"`
+	SummaryNotIn        []string `json:"summaryNotIn,omitempty"`
+	SummaryGT           *string  `json:"summaryGT,omitempty"`
+	SummaryGTE          *string  `json:"summaryGTE,omitempty"`
+	SummaryLT           *string  `json:"summaryLT,omitempty"`
+	SummaryLTE          *string  `json:"summaryLTE,omitempty"`
+	SummaryContains     *string  `json:"summaryContains,omitempty"`
+	SummaryHasPrefix    *string  `json:"summaryHasPrefix,omitempty"`
+	SummaryHasSuffix    *string  `json:"summaryHasSuffix,omitempty"`
+	SummaryEqualFold    *string  `json:"summaryEqualFold,omitempty"`
+	SummaryContainsFold *string  `json:"summaryContainsFold,omitempty"`
+
+	// "releaseDate" field predicates.
+	ReleaseDate      *int  `json:"releasedate,omitempty"`
+	ReleaseDateNEQ   *int  `json:"releasedateNEQ,omitempty"`
+	ReleaseDateIn    []int `json:"releasedateIn,omitempty"`
+	ReleaseDateNotIn []int `json:"releasedateNotIn,omitempty"`
+	ReleaseDateGT    *int  `json:"releasedateGT,omitempty"`
+	ReleaseDateGTE   *int  `json:"releasedateGTE,omitempty"`
+	ReleaseDateLT    *int  `json:"releasedateLT,omitempty"`
+	ReleaseDateLTE   *int  `json:"releasedateLTE,omitempty"`
+
+	// "categories" edge predicates.
+	HasCategories     *bool                 `json:"hasCategories,omitempty"`
+	HasCategoriesWith []*CategoryWhereInput `json:"hasCategoriesWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *RanobeWhereInput) AddPredicates(predicates ...predicate.Ranobe) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the RanobeWhereInput filter on the RanobeQuery builder.
+func (i *RanobeWhereInput) Filter(q *RanobeQuery) (*RanobeQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyRanobeWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyRanobeWhereInput is returned in case the RanobeWhereInput is empty.
+var ErrEmptyRanobeWhereInput = errors.New("ent: empty predicate RanobeWhereInput")
+
+// P returns a predicate for filtering ranobes.
+// An error is returned if the input is empty or invalid.
+func (i *RanobeWhereInput) P() (predicate.Ranobe, error) {
+	var predicates []predicate.Ranobe
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, ranobe.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.Ranobe, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, ranobe.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.Ranobe, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, ranobe.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, ranobe.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, ranobe.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, ranobe.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, ranobe.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, ranobe.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, ranobe.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, ranobe.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, ranobe.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, ranobe.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, ranobe.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, ranobe.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, ranobe.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, ranobe.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, ranobe.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, ranobe.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, ranobe.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.UpdatedAt != nil {
+		predicates = append(predicates, ranobe.UpdatedAtEQ(*i.UpdatedAt))
+	}
+	if i.UpdatedAtNEQ != nil {
+		predicates = append(predicates, ranobe.UpdatedAtNEQ(*i.UpdatedAtNEQ))
+	}
+	if len(i.UpdatedAtIn) > 0 {
+		predicates = append(predicates, ranobe.UpdatedAtIn(i.UpdatedAtIn...))
+	}
+	if len(i.UpdatedAtNotIn) > 0 {
+		predicates = append(predicates, ranobe.UpdatedAtNotIn(i.UpdatedAtNotIn...))
+	}
+	if i.UpdatedAtGT != nil {
+		predicates = append(predicates, ranobe.UpdatedAtGT(*i.UpdatedAtGT))
+	}
+	if i.UpdatedAtGTE != nil {
+		predicates = append(predicates, ranobe.UpdatedAtGTE(*i.UpdatedAtGTE))
+	}
+	if i.UpdatedAtLT != nil {
+		predicates = append(predicates, ranobe.UpdatedAtLT(*i.UpdatedAtLT))
+	}
+	if i.UpdatedAtLTE != nil {
+		predicates = append(predicates, ranobe.UpdatedAtLTE(*i.UpdatedAtLTE))
+	}
+	if i.Name != nil {
+		predicates = append(predicates, ranobe.NameEQ(*i.Name))
+	}
+	if i.NameNEQ != nil {
+		predicates = append(predicates, ranobe.NameNEQ(*i.NameNEQ))
+	}
+	if len(i.NameIn) > 0 {
+		predicates = append(predicates, ranobe.NameIn(i.NameIn...))
+	}
+	if len(i.NameNotIn) > 0 {
+		predicates = append(predicates, ranobe.NameNotIn(i.NameNotIn...))
+	}
+	if i.NameGT != nil {
+		predicates = append(predicates, ranobe.NameGT(*i.NameGT))
+	}
+	if i.NameGTE != nil {
+		predicates = append(predicates, ranobe.NameGTE(*i.NameGTE))
+	}
+	if i.NameLT != nil {
+		predicates = append(predicates, ranobe.NameLT(*i.NameLT))
+	}
+	if i.NameLTE != nil {
+		predicates = append(predicates, ranobe.NameLTE(*i.NameLTE))
+	}
+	if i.NameContains != nil {
+		predicates = append(predicates, ranobe.NameContains(*i.NameContains))
+	}
+	if i.NameHasPrefix != nil {
+		predicates = append(predicates, ranobe.NameHasPrefix(*i.NameHasPrefix))
+	}
+	if i.NameHasSuffix != nil {
+		predicates = append(predicates, ranobe.NameHasSuffix(*i.NameHasSuffix))
+	}
+	if i.NameEqualFold != nil {
+		predicates = append(predicates, ranobe.NameEqualFold(*i.NameEqualFold))
+	}
+	if i.NameContainsFold != nil {
+		predicates = append(predicates, ranobe.NameContainsFold(*i.NameContainsFold))
+	}
+	if i.EngName != nil {
+		predicates = append(predicates, ranobe.EngNameEQ(*i.EngName))
+	}
+	if i.EngNameNEQ != nil {
+		predicates = append(predicates, ranobe.EngNameNEQ(*i.EngNameNEQ))
+	}
+	if len(i.EngNameIn) > 0 {
+		predicates = append(predicates, ranobe.EngNameIn(i.EngNameIn...))
+	}
+	if len(i.EngNameNotIn) > 0 {
+		predicates = append(predicates, ranobe.EngNameNotIn(i.EngNameNotIn...))
+	}
+	if i.EngNameGT != nil {
+		predicates = append(predicates, ranobe.EngNameGT(*i.EngNameGT))
+	}
+	if i.EngNameGTE != nil {
+		predicates = append(predicates, ranobe.EngNameGTE(*i.EngNameGTE))
+	}
+	if i.EngNameLT != nil {
+		predicates = append(predicates, ranobe.EngNameLT(*i.EngNameLT))
+	}
+	if i.EngNameLTE != nil {
+		predicates = append(predicates, ranobe.EngNameLTE(*i.EngNameLTE))
+	}
+	if i.EngNameContains != nil {
+		predicates = append(predicates, ranobe.EngNameContains(*i.EngNameContains))
+	}
+	if i.EngNameHasPrefix != nil {
+		predicates = append(predicates, ranobe.EngNameHasPrefix(*i.EngNameHasPrefix))
+	}
+	if i.EngNameHasSuffix != nil {
+		predicates = append(predicates, ranobe.EngNameHasSuffix(*i.EngNameHasSuffix))
+	}
+	if i.EngNameEqualFold != nil {
+		predicates = append(predicates, ranobe.EngNameEqualFold(*i.EngNameEqualFold))
+	}
+	if i.EngNameContainsFold != nil {
+		predicates = append(predicates, ranobe.EngNameContainsFold(*i.EngNameContainsFold))
+	}
+	if i.RusName != nil {
+		predicates = append(predicates, ranobe.RusNameEQ(*i.RusName))
+	}
+	if i.RusNameNEQ != nil {
+		predicates = append(predicates, ranobe.RusNameNEQ(*i.RusNameNEQ))
+	}
+	if len(i.RusNameIn) > 0 {
+		predicates = append(predicates, ranobe.RusNameIn(i.RusNameIn...))
+	}
+	if len(i.RusNameNotIn) > 0 {
+		predicates = append(predicates, ranobe.RusNameNotIn(i.RusNameNotIn...))
+	}
+	if i.RusNameGT != nil {
+		predicates = append(predicates, ranobe.RusNameGT(*i.RusNameGT))
+	}
+	if i.RusNameGTE != nil {
+		predicates = append(predicates, ranobe.RusNameGTE(*i.RusNameGTE))
+	}
+	if i.RusNameLT != nil {
+		predicates = append(predicates, ranobe.RusNameLT(*i.RusNameLT))
+	}
+	if i.RusNameLTE != nil {
+		predicates = append(predicates, ranobe.RusNameLTE(*i.RusNameLTE))
+	}
+	if i.RusNameContains != nil {
+		predicates = append(predicates, ranobe.RusNameContains(*i.RusNameContains))
+	}
+	if i.RusNameHasPrefix != nil {
+		predicates = append(predicates, ranobe.RusNameHasPrefix(*i.RusNameHasPrefix))
+	}
+	if i.RusNameHasSuffix != nil {
+		predicates = append(predicates, ranobe.RusNameHasSuffix(*i.RusNameHasSuffix))
+	}
+	if i.RusNameEqualFold != nil {
+		predicates = append(predicates, ranobe.RusNameEqualFold(*i.RusNameEqualFold))
+	}
+	if i.RusNameContainsFold != nil {
+		predicates = append(predicates, ranobe.RusNameContainsFold(*i.RusNameContainsFold))
+	}
+	if i.Summary != nil {
+		predicates = append(predicates, ranobe.SummaryEQ(*i.Summary))
+	}
+	if i.SummaryNEQ != nil {
+		predicates = append(predicates, ranobe.SummaryNEQ(*i.SummaryNEQ))
+	}
+	if len(i.SummaryIn) > 0 {
+		predicates = append(predicates, ranobe.SummaryIn(i.SummaryIn...))
+	}
+	if len(i.SummaryNotIn) > 0 {
+		predicates = append(predicates, ranobe.SummaryNotIn(i.SummaryNotIn...))
+	}
+	if i.SummaryGT != nil {
+		predicates = append(predicates, ranobe.SummaryGT(*i.SummaryGT))
+	}
+	if i.SummaryGTE != nil {
+		predicates = append(predicates, ranobe.SummaryGTE(*i.SummaryGTE))
+	}
+	if i.SummaryLT != nil {
+		predicates = append(predicates, ranobe.SummaryLT(*i.SummaryLT))
+	}
+	if i.SummaryLTE != nil {
+		predicates = append(predicates, ranobe.SummaryLTE(*i.SummaryLTE))
+	}
+	if i.SummaryContains != nil {
+		predicates = append(predicates, ranobe.SummaryContains(*i.SummaryContains))
+	}
+	if i.SummaryHasPrefix != nil {
+		predicates = append(predicates, ranobe.SummaryHasPrefix(*i.SummaryHasPrefix))
+	}
+	if i.SummaryHasSuffix != nil {
+		predicates = append(predicates, ranobe.SummaryHasSuffix(*i.SummaryHasSuffix))
+	}
+	if i.SummaryEqualFold != nil {
+		predicates = append(predicates, ranobe.SummaryEqualFold(*i.SummaryEqualFold))
+	}
+	if i.SummaryContainsFold != nil {
+		predicates = append(predicates, ranobe.SummaryContainsFold(*i.SummaryContainsFold))
+	}
+	if i.ReleaseDate != nil {
+		predicates = append(predicates, ranobe.ReleaseDateEQ(*i.ReleaseDate))
+	}
+	if i.ReleaseDateNEQ != nil {
+		predicates = append(predicates, ranobe.ReleaseDateNEQ(*i.ReleaseDateNEQ))
+	}
+	if len(i.ReleaseDateIn) > 0 {
+		predicates = append(predicates, ranobe.ReleaseDateIn(i.ReleaseDateIn...))
+	}
+	if len(i.ReleaseDateNotIn) > 0 {
+		predicates = append(predicates, ranobe.ReleaseDateNotIn(i.ReleaseDateNotIn...))
+	}
+	if i.ReleaseDateGT != nil {
+		predicates = append(predicates, ranobe.ReleaseDateGT(*i.ReleaseDateGT))
+	}
+	if i.ReleaseDateGTE != nil {
+		predicates = append(predicates, ranobe.ReleaseDateGTE(*i.ReleaseDateGTE))
+	}
+	if i.ReleaseDateLT != nil {
+		predicates = append(predicates, ranobe.ReleaseDateLT(*i.ReleaseDateLT))
+	}
+	if i.ReleaseDateLTE != nil {
+		predicates = append(predicates, ranobe.ReleaseDateLTE(*i.ReleaseDateLTE))
+	}
+
+	if i.HasCategories != nil {
+		p := ranobe.HasCategories()
+		if !*i.HasCategories {
+			p = ranobe.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasCategoriesWith) > 0 {
+		with := make([]predicate.Category, 0, len(i.HasCategoriesWith))
+		for _, w := range i.HasCategoriesWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasCategoriesWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, ranobe.HasCategoriesWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyRanobeWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return ranobe.And(predicates...), nil
+	}
+}
 
 // TodoWhereInput represents a where input for filtering Todo queries.
 type TodoWhereInput struct {
@@ -60,12 +848,6 @@ type TodoWhereInput struct {
 	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
 	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
 	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
-
-	// "status" field predicates.
-	Status      *todo.Status  `json:"status,omitempty"`
-	StatusNEQ   *todo.Status  `json:"statusNEQ,omitempty"`
-	StatusIn    []todo.Status `json:"statusIn,omitempty"`
-	StatusNotIn []todo.Status `json:"statusNotIn,omitempty"`
 
 	// "priority" field predicates.
 	Priority      *int  `json:"priority,omitempty"`
@@ -280,18 +1062,6 @@ func (i *TodoWhereInput) P() (predicate.Todo, error) {
 	}
 	if i.NameContainsFold != nil {
 		predicates = append(predicates, todo.NameContainsFold(*i.NameContainsFold))
-	}
-	if i.Status != nil {
-		predicates = append(predicates, todo.StatusEQ(*i.Status))
-	}
-	if i.StatusNEQ != nil {
-		predicates = append(predicates, todo.StatusNEQ(*i.StatusNEQ))
-	}
-	if len(i.StatusIn) > 0 {
-		predicates = append(predicates, todo.StatusIn(i.StatusIn...))
-	}
-	if len(i.StatusNotIn) > 0 {
-		predicates = append(predicates, todo.StatusNotIn(i.StatusNotIn...))
 	}
 	if i.Priority != nil {
 		predicates = append(predicates, todo.PriorityEQ(*i.Priority))

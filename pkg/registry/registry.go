@@ -24,7 +24,8 @@ func New(client *ent.Client) Registry {
 // NewController generates controllers
 func (r *registry) NewController() controller.Controller {
 	return controller.Controller{
-		User: r.NewUserController(),
-		Todo: r.NewTodoController(),
+		User:     r.NewUserController(),
+		Todo:     r.NewTodoController(),
+		Category: r.NewCategoryController(),
 	}
 }

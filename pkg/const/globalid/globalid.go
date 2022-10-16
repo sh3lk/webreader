@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"webreader/ent/category"
+	"webreader/ent/ranobe"
 	"webreader/ent/todo"
 	"webreader/ent/user"
 )
@@ -15,8 +17,10 @@ type field struct {
 
 // GlobalIDs maps unique string to tables names.
 type GlobalIDs struct {
-	User field
-	Todo field
+	User     field
+	Todo     field
+	Ranobe   field
+	Category field
 }
 
 // New generates a map object that is intended to be used as global identification for node interface query.
@@ -30,6 +34,14 @@ func New() GlobalIDs {
 		Todo: field{
 			Prefix: "0AB",
 			Table:  todo.Table,
+		},
+		Ranobe: field{
+			Prefix: "0AC",
+			Table:  ranobe.Table,
+		},
+		Category: field{
+			Prefix: "0AD",
+			Table:  category.Table,
 		},
 	}
 }

@@ -11,6 +11,8 @@ import (
 	"webreader/ent/migrate"
 	"webreader/ent/schema/ulid"
 
+	"webreader/ent/category"
+	"webreader/ent/ranobe"
 	"webreader/ent/todo"
 	"webreader/ent/user"
 
@@ -24,6 +26,10 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// Category is the client for interacting with the Category builders.
+	Category *CategoryClient
+	// Ranobe is the client for interacting with the Ranobe builders.
+	Ranobe *RanobeClient
 	// Todo is the client for interacting with the Todo builders.
 	Todo *TodoClient
 	// User is the client for interacting with the User builders.
@@ -41,6 +47,8 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.Category = NewCategoryClient(c.config)
+	c.Ranobe = NewRanobeClient(c.config)
 	c.Todo = NewTodoClient(c.config)
 	c.User = NewUserClient(c.config)
 }
@@ -74,10 +82,12 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		Todo:   NewTodoClient(cfg),
-		User:   NewUserClient(cfg),
+		ctx:      ctx,
+		config:   cfg,
+		Category: NewCategoryClient(cfg),
+		Ranobe:   NewRanobeClient(cfg),
+		Todo:     NewTodoClient(cfg),
+		User:     NewUserClient(cfg),
 	}, nil
 }
 
@@ -95,17 +105,19 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		Todo:   NewTodoClient(cfg),
-		User:   NewUserClient(cfg),
+		ctx:      ctx,
+		config:   cfg,
+		Category: NewCategoryClient(cfg),
+		Ranobe:   NewRanobeClient(cfg),
+		Todo:     NewTodoClient(cfg),
+		User:     NewUserClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Todo.
+//		Category.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -127,8 +139,222 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
+	c.Category.Use(hooks...)
+	c.Ranobe.Use(hooks...)
 	c.Todo.Use(hooks...)
 	c.User.Use(hooks...)
+}
+
+// CategoryClient is a client for the Category schema.
+type CategoryClient struct {
+	config
+}
+
+// NewCategoryClient returns a client for the Category from the given config.
+func NewCategoryClient(c config) *CategoryClient {
+	return &CategoryClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `category.Hooks(f(g(h())))`.
+func (c *CategoryClient) Use(hooks ...Hook) {
+	c.hooks.Category = append(c.hooks.Category, hooks...)
+}
+
+// Create returns a builder for creating a Category entity.
+func (c *CategoryClient) Create() *CategoryCreate {
+	mutation := newCategoryMutation(c.config, OpCreate)
+	return &CategoryCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Category entities.
+func (c *CategoryClient) CreateBulk(builders ...*CategoryCreate) *CategoryCreateBulk {
+	return &CategoryCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Category.
+func (c *CategoryClient) Update() *CategoryUpdate {
+	mutation := newCategoryMutation(c.config, OpUpdate)
+	return &CategoryUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CategoryClient) UpdateOne(ca *Category) *CategoryUpdateOne {
+	mutation := newCategoryMutation(c.config, OpUpdateOne, withCategory(ca))
+	return &CategoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CategoryClient) UpdateOneID(id ulid.ID) *CategoryUpdateOne {
+	mutation := newCategoryMutation(c.config, OpUpdateOne, withCategoryID(id))
+	return &CategoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Category.
+func (c *CategoryClient) Delete() *CategoryDelete {
+	mutation := newCategoryMutation(c.config, OpDelete)
+	return &CategoryDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CategoryClient) DeleteOne(ca *Category) *CategoryDeleteOne {
+	return c.DeleteOneID(ca.ID)
+}
+
+// DeleteOne returns a builder for deleting the given entity by its id.
+func (c *CategoryClient) DeleteOneID(id ulid.ID) *CategoryDeleteOne {
+	builder := c.Delete().Where(category.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CategoryDeleteOne{builder}
+}
+
+// Query returns a query builder for Category.
+func (c *CategoryClient) Query() *CategoryQuery {
+	return &CategoryQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Category entity by its id.
+func (c *CategoryClient) Get(ctx context.Context, id ulid.ID) (*Category, error) {
+	return c.Query().Where(category.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CategoryClient) GetX(ctx context.Context, id ulid.ID) *Category {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryRanobes queries the ranobes edge of a Category.
+func (c *CategoryClient) QueryRanobes(ca *Category) *RanobeQuery {
+	query := &RanobeQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ca.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(category.Table, category.FieldID, id),
+			sqlgraph.To(ranobe.Table, ranobe.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, category.RanobesTable, category.RanobesPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(ca.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *CategoryClient) Hooks() []Hook {
+	return c.hooks.Category
+}
+
+// RanobeClient is a client for the Ranobe schema.
+type RanobeClient struct {
+	config
+}
+
+// NewRanobeClient returns a client for the Ranobe from the given config.
+func NewRanobeClient(c config) *RanobeClient {
+	return &RanobeClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `ranobe.Hooks(f(g(h())))`.
+func (c *RanobeClient) Use(hooks ...Hook) {
+	c.hooks.Ranobe = append(c.hooks.Ranobe, hooks...)
+}
+
+// Create returns a builder for creating a Ranobe entity.
+func (c *RanobeClient) Create() *RanobeCreate {
+	mutation := newRanobeMutation(c.config, OpCreate)
+	return &RanobeCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Ranobe entities.
+func (c *RanobeClient) CreateBulk(builders ...*RanobeCreate) *RanobeCreateBulk {
+	return &RanobeCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Ranobe.
+func (c *RanobeClient) Update() *RanobeUpdate {
+	mutation := newRanobeMutation(c.config, OpUpdate)
+	return &RanobeUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RanobeClient) UpdateOne(r *Ranobe) *RanobeUpdateOne {
+	mutation := newRanobeMutation(c.config, OpUpdateOne, withRanobe(r))
+	return &RanobeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RanobeClient) UpdateOneID(id ulid.ID) *RanobeUpdateOne {
+	mutation := newRanobeMutation(c.config, OpUpdateOne, withRanobeID(id))
+	return &RanobeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Ranobe.
+func (c *RanobeClient) Delete() *RanobeDelete {
+	mutation := newRanobeMutation(c.config, OpDelete)
+	return &RanobeDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RanobeClient) DeleteOne(r *Ranobe) *RanobeDeleteOne {
+	return c.DeleteOneID(r.ID)
+}
+
+// DeleteOne returns a builder for deleting the given entity by its id.
+func (c *RanobeClient) DeleteOneID(id ulid.ID) *RanobeDeleteOne {
+	builder := c.Delete().Where(ranobe.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RanobeDeleteOne{builder}
+}
+
+// Query returns a query builder for Ranobe.
+func (c *RanobeClient) Query() *RanobeQuery {
+	return &RanobeQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Ranobe entity by its id.
+func (c *RanobeClient) Get(ctx context.Context, id ulid.ID) (*Ranobe, error) {
+	return c.Query().Where(ranobe.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RanobeClient) GetX(ctx context.Context, id ulid.ID) *Ranobe {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryCategories queries the categories edge of a Ranobe.
+func (c *RanobeClient) QueryCategories(r *Ranobe) *CategoryQuery {
+	query := &CategoryQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := r.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ranobe.Table, ranobe.FieldID, id),
+			sqlgraph.To(category.Table, category.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, ranobe.CategoriesTable, ranobe.CategoriesPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *RanobeClient) Hooks() []Hook {
+	return c.hooks.Ranobe
 }
 
 // TodoClient is a client for the Todo schema.

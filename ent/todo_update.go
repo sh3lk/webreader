@@ -55,12 +55,6 @@ func (tu *TodoUpdate) SetName(s string) *TodoUpdate {
 	return tu
 }
 
-// SetStatus sets the "status" field.
-func (tu *TodoUpdate) SetStatus(t todo.Status) *TodoUpdate {
-	tu.mutation.SetStatus(t)
-	return tu
-}
-
 // SetPriority sets the "priority" field.
 func (tu *TodoUpdate) SetPriority(i int) *TodoUpdate {
 	tu.mutation.ResetPriority()
@@ -97,18 +91,12 @@ func (tu *TodoUpdate) Save(ctx context.Context) (int, error) {
 		affected int
 	)
 	if len(tu.hooks) == 0 {
-		if err = tu.check(); err != nil {
-			return 0, err
-		}
 		affected, err = tu.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*TodoMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = tu.check(); err != nil {
-				return 0, err
 			}
 			tu.mutation = mutation
 			affected, err = tu.sqlSave(ctx)
@@ -150,16 +138,6 @@ func (tu *TodoUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (tu *TodoUpdate) check() error {
-	if v, ok := tu.mutation.Status(); ok {
-		if err := todo.StatusValidator(v); err != nil {
-			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Todo.status": %w`, err)}
-		}
-	}
-	return nil
-}
-
 func (tu *TodoUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
@@ -183,13 +161,6 @@ func (tu *TodoUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Type:   field.TypeString,
 			Value:  value,
 			Column: todo.FieldName,
-		})
-	}
-	if value, ok := tu.mutation.Status(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: todo.FieldStatus,
 		})
 	}
 	if value, ok := tu.mutation.Priority(); ok {
@@ -286,12 +257,6 @@ func (tuo *TodoUpdateOne) SetName(s string) *TodoUpdateOne {
 	return tuo
 }
 
-// SetStatus sets the "status" field.
-func (tuo *TodoUpdateOne) SetStatus(t todo.Status) *TodoUpdateOne {
-	tuo.mutation.SetStatus(t)
-	return tuo
-}
-
 // SetPriority sets the "priority" field.
 func (tuo *TodoUpdateOne) SetPriority(i int) *TodoUpdateOne {
 	tuo.mutation.ResetPriority()
@@ -335,18 +300,12 @@ func (tuo *TodoUpdateOne) Save(ctx context.Context) (*Todo, error) {
 		node *Todo
 	)
 	if len(tuo.hooks) == 0 {
-		if err = tuo.check(); err != nil {
-			return nil, err
-		}
 		node, err = tuo.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*TodoMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = tuo.check(); err != nil {
-				return nil, err
 			}
 			tuo.mutation = mutation
 			node, err = tuo.sqlSave(ctx)
@@ -394,16 +353,6 @@ func (tuo *TodoUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (tuo *TodoUpdateOne) check() error {
-	if v, ok := tuo.mutation.Status(); ok {
-		if err := todo.StatusValidator(v); err != nil {
-			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Todo.status": %w`, err)}
-		}
-	}
-	return nil
-}
-
 func (tuo *TodoUpdateOne) sqlSave(ctx context.Context) (_node *Todo, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
@@ -444,13 +393,6 @@ func (tuo *TodoUpdateOne) sqlSave(ctx context.Context) (_node *Todo, err error) 
 			Type:   field.TypeString,
 			Value:  value,
 			Column: todo.FieldName,
-		})
-	}
-	if value, ok := tuo.mutation.Status(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: todo.FieldStatus,
 		})
 	}
 	if value, ok := tuo.mutation.Priority(); ok {

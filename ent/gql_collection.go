@@ -10,6 +10,130 @@ import (
 )
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (c *CategoryQuery) CollectFields(ctx context.Context, satisfies ...string) (*CategoryQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return c, nil
+	}
+	if err := c.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+func (c *CategoryQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
+		switch field.Name {
+		case "ranobes":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = &RanobeQuery{config: c.config}
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			c.WithNamedRanobes(alias, func(wq *RanobeQuery) {
+				*wq = *query
+			})
+		}
+	}
+	return nil
+}
+
+type categoryPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []CategoryPaginateOption
+}
+
+func newCategoryPaginateArgs(rv map[string]interface{}) *categoryPaginateArgs {
+	args := &categoryPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[whereField].(*CategoryWhereInput); ok {
+		args.opts = append(args.opts, WithCategoryFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (r *RanobeQuery) CollectFields(ctx context.Context, satisfies ...string) (*RanobeQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return r, nil
+	}
+	if err := r.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+func (r *RanobeQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
+		switch field.Name {
+		case "categories":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = &CategoryQuery{config: r.config}
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			r.WithNamedCategories(alias, func(wq *CategoryQuery) {
+				*wq = *query
+			})
+		}
+	}
+	return nil
+}
+
+type ranobePaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []RanobePaginateOption
+}
+
+func newRanobePaginateArgs(rv map[string]interface{}) *ranobePaginateArgs {
+	args := &ranobePaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[whereField].(*RanobeWhereInput); ok {
+		args.opts = append(args.opts, WithRanobeFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
 func (t *TodoQuery) CollectFields(ctx context.Context, satisfies ...string) (*TodoQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {

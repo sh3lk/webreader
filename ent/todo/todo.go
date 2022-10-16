@@ -3,9 +3,6 @@
 package todo
 
 import (
-	"fmt"
-	"io"
-	"strconv"
 	"time"
 	"webreader/ent/schema/ulid"
 )
@@ -19,8 +16,6 @@ const (
 	FieldUserID = "user_id"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
-	// FieldStatus holds the string denoting the status field in the database.
-	FieldStatus = "status"
 	// FieldPriority holds the string denoting the priority field in the database.
 	FieldPriority = "priority"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -45,7 +40,6 @@ var Columns = []string{
 	FieldID,
 	FieldUserID,
 	FieldName,
-	FieldStatus,
 	FieldPriority,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -69,44 +63,3 @@ var (
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() ulid.ID
 )
-
-// Status defines the type for the "status" enum field.
-type Status string
-
-// Status values.
-const (
-	StatusInProgress Status = "IN_PROGRESS"
-	StatusCompleted  Status = "COMPLETED"
-)
-
-func (s Status) String() string {
-	return string(s)
-}
-
-// StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
-func StatusValidator(s Status) error {
-	switch s {
-	case StatusInProgress, StatusCompleted:
-		return nil
-	default:
-		return fmt.Errorf("todo: invalid enum value for status field: %q", s)
-	}
-}
-
-// MarshalGQL implements graphql.Marshaler interface.
-func (e Status) MarshalGQL(w io.Writer) {
-	io.WriteString(w, strconv.Quote(e.String()))
-}
-
-// UnmarshalGQL implements graphql.Unmarshaler interface.
-func (e *Status) UnmarshalGQL(val interface{}) error {
-	str, ok := val.(string)
-	if !ok {
-		return fmt.Errorf("enum %T must be a string", val)
-	}
-	*e = Status(str)
-	if err := StatusValidator(*e); err != nil {
-		return fmt.Errorf("%s is not a valid Status", str)
-	}
-	return nil
-}

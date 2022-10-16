@@ -1,0 +1,50 @@
+type Ranobe {
+    id: ID!
+    name: String!
+    engName: String!
+    rusName: String!
+    summary: String!
+    releaseDate: Int!
+    categories: [Category!]
+}
+
+input UpdateRanobeInput {
+    id: ID!
+    name: String
+    engName: String
+    rusName: String
+    summary: String
+    releaseDate: Int
+    addCategoryIDs: [ID!]
+    removeCategoryIDs: [ID!]
+}
+
+input CreateRanobeInput {
+    name: String!
+    engName: String!
+    rusName: String!
+    summary: String!
+    releaseDate: Int!
+    categoryIDs: [ID!]
+}
+
+type RanobeEdge {
+    node: Ranobe
+    cursor: Cursor!
+}
+
+type RanobeConnection {
+    totalCount: Int!
+    pageInfo: PageInfo!
+    edges: [RanobeEdge]
+}
+
+extend type Query {
+    ranobe(id: ID): Ranobe
+    ranobes(after: Cursor, first: Int, before: Cursor, last: Int, where: RanobeWhereInput): UserConnection
+}
+
+extend type Mutation {
+    createRanobe(input: CreateRanobeInput!): Ranobe!
+    updateRanobe(input: UpdateRanobeInput!): Ranobe!
+}

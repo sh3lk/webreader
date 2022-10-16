@@ -1,12 +1,7 @@
-enum TodoStatus {
-    IN_PROGRESS
-    COMPLETED
-}
 
 type Todo {
     id: ID!
     name: String!
-    status: TodoStatus!
     priority: Int!
     userID: ID
     createdAt: String!
@@ -14,14 +9,12 @@ type Todo {
 }
 input CreateTodoInput {
     name: String!
-    status: TodoStatus = IN_PROGRESS
     priority: Int!
     userID: ID!
 }
 input UpdateTodoInput {
     id: ID!
     name: String
-    status: TodoStatus
     priority: Int
     userID: ID
 }

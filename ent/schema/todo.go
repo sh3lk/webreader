@@ -29,11 +29,6 @@ func (TodoMixin) Fields() []ent.Field {
 			GoType(ulid.ID("")).
 			Optional(),
 		field.String("name"),
-		field.Enum("status").
-			NamedValues(
-				"InProgress", "IN_PROGRESS",
-				"Completed", "COMPLETED",
-			),
 		field.Int("priority"),
 	}
 }

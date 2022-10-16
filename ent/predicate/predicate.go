@@ -6,6 +6,12 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// Category is the predicate function for category builders.
+type Category func(*sql.Selector)
+
+// Ranobe is the predicate function for ranobe builders.
+type Ranobe func(*sql.Selector)
+
 // Todo is the predicate function for todo builders.
 type Todo func(*sql.Selector)
 

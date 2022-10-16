@@ -6,6 +6,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"webreader/ent/category"
+	"webreader/ent/ranobe"
 	"webreader/ent/schema/ulid"
 	"webreader/ent/todo"
 	"webreader/ent/user"
@@ -42,11 +44,141 @@ type Edge struct {
 	IDs  []ulid.ID `json:"ids,omitempty"`  // node ids (where this edge point to).
 }
 
+func (c *Category) Node(ctx context.Context) (node *Node, err error) {
+	node = &Node{
+		ID:     c.ID,
+		Type:   "Category",
+		Fields: make([]*Field, 4),
+		Edges:  make([]*Edge, 1),
+	}
+	var buf []byte
+	if buf, err = json.Marshal(c.CreatedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[0] = &Field{
+		Type:  "time.Time",
+		Name:  "created_at",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(c.UpdatedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "time.Time",
+		Name:  "updated_at",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(c.Name); err != nil {
+		return nil, err
+	}
+	node.Fields[2] = &Field{
+		Type:  "string",
+		Name:  "name",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(c.Description); err != nil {
+		return nil, err
+	}
+	node.Fields[3] = &Field{
+		Type:  "string",
+		Name:  "description",
+		Value: string(buf),
+	}
+	node.Edges[0] = &Edge{
+		Type: "Ranobe",
+		Name: "ranobes",
+	}
+	err = c.QueryRanobes().
+		Select(ranobe.FieldID).
+		Scan(ctx, &node.Edges[0].IDs)
+	if err != nil {
+		return nil, err
+	}
+	return node, nil
+}
+
+func (r *Ranobe) Node(ctx context.Context) (node *Node, err error) {
+	node = &Node{
+		ID:     r.ID,
+		Type:   "Ranobe",
+		Fields: make([]*Field, 7),
+		Edges:  make([]*Edge, 1),
+	}
+	var buf []byte
+	if buf, err = json.Marshal(r.CreatedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[0] = &Field{
+		Type:  "time.Time",
+		Name:  "created_at",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(r.UpdatedAt); err != nil {
+		return nil, err
+	}
+	node.Fields[1] = &Field{
+		Type:  "time.Time",
+		Name:  "updated_at",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(r.Name); err != nil {
+		return nil, err
+	}
+	node.Fields[2] = &Field{
+		Type:  "string",
+		Name:  "name",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(r.EngName); err != nil {
+		return nil, err
+	}
+	node.Fields[3] = &Field{
+		Type:  "string",
+		Name:  "engName",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(r.RusName); err != nil {
+		return nil, err
+	}
+	node.Fields[4] = &Field{
+		Type:  "string",
+		Name:  "rusName",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(r.Summary); err != nil {
+		return nil, err
+	}
+	node.Fields[5] = &Field{
+		Type:  "string",
+		Name:  "summary",
+		Value: string(buf),
+	}
+	if buf, err = json.Marshal(r.ReleaseDate); err != nil {
+		return nil, err
+	}
+	node.Fields[6] = &Field{
+		Type:  "int",
+		Name:  "releaseDate",
+		Value: string(buf),
+	}
+	node.Edges[0] = &Edge{
+		Type: "Category",
+		Name: "categories",
+	}
+	err = r.QueryCategories().
+		Select(category.FieldID).
+		Scan(ctx, &node.Edges[0].IDs)
+	if err != nil {
+		return nil, err
+	}
+	return node, nil
+}
+
 func (t *Todo) Node(ctx context.Context) (node *Node, err error) {
 	node = &Node{
 		ID:     t.ID,
 		Type:   "Todo",
-		Fields: make([]*Field, 6),
+		Fields: make([]*Field, 5),
 		Edges:  make([]*Edge, 1),
 	}
 	var buf []byte
@@ -66,18 +198,10 @@ func (t *Todo) Node(ctx context.Context) (node *Node, err error) {
 		Name:  "name",
 		Value: string(buf),
 	}
-	if buf, err = json.Marshal(t.Status); err != nil {
-		return nil, err
-	}
-	node.Fields[2] = &Field{
-		Type:  "todo.Status",
-		Name:  "status",
-		Value: string(buf),
-	}
 	if buf, err = json.Marshal(t.Priority); err != nil {
 		return nil, err
 	}
-	node.Fields[3] = &Field{
+	node.Fields[2] = &Field{
 		Type:  "int",
 		Name:  "priority",
 		Value: string(buf),
@@ -85,7 +209,7 @@ func (t *Todo) Node(ctx context.Context) (node *Node, err error) {
 	if buf, err = json.Marshal(t.CreatedAt); err != nil {
 		return nil, err
 	}
-	node.Fields[4] = &Field{
+	node.Fields[3] = &Field{
 		Type:  "time.Time",
 		Name:  "created_at",
 		Value: string(buf),
@@ -93,7 +217,7 @@ func (t *Todo) Node(ctx context.Context) (node *Node, err error) {
 	if buf, err = json.Marshal(t.UpdatedAt); err != nil {
 		return nil, err
 	}
-	node.Fields[5] = &Field{
+	node.Fields[4] = &Field{
 		Type:  "time.Time",
 		Name:  "updated_at",
 		Value: string(buf),
@@ -230,6 +354,38 @@ func (c *Client) Noder(ctx context.Context, id ulid.ID, opts ...NodeOption) (_ N
 
 func (c *Client) noder(ctx context.Context, table string, id ulid.ID) (Noder, error) {
 	switch table {
+	case category.Table:
+		var uid ulid.ID
+		if err := uid.UnmarshalGQL(id); err != nil {
+			return nil, err
+		}
+		query := c.Category.Query().
+			Where(category.ID(uid))
+		query, err := query.CollectFields(ctx, "Category")
+		if err != nil {
+			return nil, err
+		}
+		n, err := query.Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return n, nil
+	case ranobe.Table:
+		var uid ulid.ID
+		if err := uid.UnmarshalGQL(id); err != nil {
+			return nil, err
+		}
+		query := c.Ranobe.Query().
+			Where(ranobe.ID(uid))
+		query, err := query.CollectFields(ctx, "Ranobe")
+		if err != nil {
+			return nil, err
+		}
+		n, err := query.Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return n, nil
 	case todo.Table:
 		var uid ulid.ID
 		if err := uid.UnmarshalGQL(id); err != nil {
@@ -335,6 +491,38 @@ func (c *Client) noders(ctx context.Context, table string, ids []ulid.ID) ([]Nod
 		idmap[id] = append(idmap[id], &noders[i])
 	}
 	switch table {
+	case category.Table:
+		query := c.Category.Query().
+			Where(category.IDIn(ids...))
+		query, err := query.CollectFields(ctx, "Category")
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case ranobe.Table:
+		query := c.Ranobe.Query().
+			Where(ranobe.IDIn(ids...))
+		query, err := query.CollectFields(ctx, "Ranobe")
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
 	case todo.Table:
 		query := c.Todo.Query().
 			Where(todo.IDIn(ids...))

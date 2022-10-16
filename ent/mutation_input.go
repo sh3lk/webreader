@@ -5,13 +5,163 @@ package ent
 import (
 	"time"
 	"webreader/ent/schema/ulid"
-	"webreader/ent/todo"
 )
+
+// CreateCategoryInput represents a mutation input for creating categories.
+type CreateCategoryInput struct {
+	CreatedAt   *time.Time
+	UpdatedAt   *time.Time
+	Name        string
+	Description string
+	RanobeIDs   []ulid.ID
+}
+
+// Mutate applies the CreateCategoryInput on the CategoryCreate builder.
+func (i *CreateCategoryInput) Mutate(m *CategoryCreate) {
+	if v := i.CreatedAt; v != nil {
+		m.SetCreatedAt(*v)
+	}
+	if v := i.UpdatedAt; v != nil {
+		m.SetUpdatedAt(*v)
+	}
+	m.SetName(i.Name)
+	m.SetDescription(i.Description)
+	if ids := i.RanobeIDs; len(ids) > 0 {
+		m.AddRanobeIDs(ids...)
+	}
+}
+
+// SetInput applies the change-set in the CreateCategoryInput on the create builder.
+func (c *CategoryCreate) SetInput(i CreateCategoryInput) *CategoryCreate {
+	i.Mutate(c)
+	return c
+}
+
+// UpdateCategoryInput represents a mutation input for updating categories.
+type UpdateCategoryInput struct {
+	ID              ulid.ID
+	Name            *string
+	Description     *string
+	AddRanobeIDs    []ulid.ID
+	RemoveRanobeIDs []ulid.ID
+}
+
+// Mutate applies the UpdateCategoryInput on the CategoryMutation.
+func (i *UpdateCategoryInput) Mutate(m *CategoryMutation) {
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
+	if v := i.Description; v != nil {
+		m.SetDescription(*v)
+	}
+	if ids := i.AddRanobeIDs; len(ids) > 0 {
+		m.AddRanobeIDs(ids...)
+	}
+	if ids := i.RemoveRanobeIDs; len(ids) > 0 {
+		m.RemoveRanobeIDs(ids...)
+	}
+}
+
+// SetInput applies the change-set in the UpdateCategoryInput on the update builder.
+func (u *CategoryUpdate) SetInput(i UpdateCategoryInput) *CategoryUpdate {
+	i.Mutate(u.Mutation())
+	return u
+}
+
+// SetInput applies the change-set in the UpdateCategoryInput on the update-one builder.
+func (u *CategoryUpdateOne) SetInput(i UpdateCategoryInput) *CategoryUpdateOne {
+	i.Mutate(u.Mutation())
+	return u
+}
+
+// CreateRanobeInput represents a mutation input for creating ranobes.
+type CreateRanobeInput struct {
+	CreatedAt   *time.Time
+	UpdatedAt   *time.Time
+	Name        string
+	EngName     string
+	RusName     string
+	Summary     string
+	ReleaseDate int
+	CategoryIDs []ulid.ID
+}
+
+// Mutate applies the CreateRanobeInput on the RanobeCreate builder.
+func (i *CreateRanobeInput) Mutate(m *RanobeCreate) {
+	if v := i.CreatedAt; v != nil {
+		m.SetCreatedAt(*v)
+	}
+	if v := i.UpdatedAt; v != nil {
+		m.SetUpdatedAt(*v)
+	}
+	m.SetName(i.Name)
+	m.SetEngName(i.EngName)
+	m.SetRusName(i.RusName)
+	m.SetSummary(i.Summary)
+	m.SetReleaseDate(i.ReleaseDate)
+	if ids := i.CategoryIDs; len(ids) > 0 {
+		m.AddCategoryIDs(ids...)
+	}
+}
+
+// SetInput applies the change-set in the CreateRanobeInput on the create builder.
+func (c *RanobeCreate) SetInput(i CreateRanobeInput) *RanobeCreate {
+	i.Mutate(c)
+	return c
+}
+
+// UpdateRanobeInput represents a mutation input for updating ranobes.
+type UpdateRanobeInput struct {
+	ID                ulid.ID
+	Name              *string
+	EngName           *string
+	RusName           *string
+	Summary           *string
+	ReleaseDate       *int
+	AddCategoryIDs    []ulid.ID
+	RemoveCategoryIDs []ulid.ID
+}
+
+// Mutate applies the UpdateRanobeInput on the RanobeMutation.
+func (i *UpdateRanobeInput) Mutate(m *RanobeMutation) {
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
+	if v := i.EngName; v != nil {
+		m.SetEngName(*v)
+	}
+	if v := i.RusName; v != nil {
+		m.SetRusName(*v)
+	}
+	if v := i.Summary; v != nil {
+		m.SetSummary(*v)
+	}
+	if v := i.ReleaseDate; v != nil {
+		m.SetReleaseDate(*v)
+	}
+	if ids := i.AddCategoryIDs; len(ids) > 0 {
+		m.AddCategoryIDs(ids...)
+	}
+	if ids := i.RemoveCategoryIDs; len(ids) > 0 {
+		m.RemoveCategoryIDs(ids...)
+	}
+}
+
+// SetInput applies the change-set in the UpdateRanobeInput on the update builder.
+func (u *RanobeUpdate) SetInput(i UpdateRanobeInput) *RanobeUpdate {
+	i.Mutate(u.Mutation())
+	return u
+}
+
+// SetInput applies the change-set in the UpdateRanobeInput on the update-one builder.
+func (u *RanobeUpdateOne) SetInput(i UpdateRanobeInput) *RanobeUpdateOne {
+	i.Mutate(u.Mutation())
+	return u
+}
 
 // CreateTodoInput represents a mutation input for creating todos.
 type CreateTodoInput struct {
 	Name      string
-	Status    todo.Status
 	Priority  int
 	CreatedAt *time.Time
 	UpdatedAt *time.Time
@@ -21,7 +171,6 @@ type CreateTodoInput struct {
 // Mutate applies the CreateTodoInput on the TodoCreate builder.
 func (i *CreateTodoInput) Mutate(m *TodoCreate) {
 	m.SetName(i.Name)
-	m.SetStatus(i.Status)
 	m.SetPriority(i.Priority)
 	if v := i.CreatedAt; v != nil {
 		m.SetCreatedAt(*v)
@@ -44,7 +193,6 @@ func (c *TodoCreate) SetInput(i CreateTodoInput) *TodoCreate {
 type UpdateTodoInput struct {
 	ID        ulid.ID
 	Name      *string
-	Status    *todo.Status
 	Priority  *int
 	UserID    *ulid.ID
 	ClearUser bool
@@ -54,9 +202,6 @@ type UpdateTodoInput struct {
 func (i *UpdateTodoInput) Mutate(m *TodoMutation) {
 	if v := i.Name; v != nil {
 		m.SetName(*v)
-	}
-	if v := i.Status; v != nil {
-		m.SetStatus(*v)
 	}
 	if v := i.Priority; v != nil {
 		m.SetPriority(*v)

@@ -8,6 +8,30 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
+func (c *Category) Ranobes(ctx context.Context) (result []*Ranobe, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = c.NamedRanobes(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = c.Edges.RanobesOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = c.QueryRanobes().All(ctx)
+	}
+	return result, err
+}
+
+func (r *Ranobe) Categories(ctx context.Context) (result []*Category, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = r.NamedCategories(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = r.Edges.CategoriesOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = r.QueryCategories().All(ctx)
+	}
+	return result, err
+}
+
 func (t *Todo) User(ctx context.Context) (*User, error) {
 	result, err := t.Edges.UserOrErr()
 	if IsNotLoaded(err) {
