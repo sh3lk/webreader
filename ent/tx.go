@@ -16,6 +16,8 @@ type Tx struct {
 	Category *CategoryClient
 	// Ranobe is the client for interacting with the Ranobe builders.
 	Ranobe *RanobeClient
+	// Tag is the client for interacting with the Tag builders.
+	Tag *TagClient
 	// Todo is the client for interacting with the Todo builders.
 	Todo *TodoClient
 	// User is the client for interacting with the User builders.
@@ -153,6 +155,7 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.Category = NewCategoryClient(tx.config)
 	tx.Ranobe = NewRanobeClient(tx.config)
+	tx.Tag = NewTagClient(tx.config)
 	tx.Todo = NewTodoClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 }

@@ -26,6 +26,7 @@ type config struct {
 type hooks struct {
 	Category []ent.Hook
 	Ranobe   []ent.Hook
+	Tag      []ent.Hook
 	Todo     []ent.Hook
 	User     []ent.Hook
 }

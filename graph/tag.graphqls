@@ -1,0 +1,26 @@
+type Tag {
+    id: ID!
+    name: String!
+    description: String!
+    createdAt: String!
+    updatedAt: String!
+}
+input CreateTagInput {
+    name: String!
+    description: String
+}
+input UpdateTagInput {
+    id: ID!
+    name: String
+    description: String
+}
+
+extend type Query {
+    tag(id: ID): Tag
+    tags: [Tag!]
+}
+
+extend type Mutation {
+    createTag(input: CreateTagInput!): Tag!
+    updateTag(input: UpdateTagInput!): Tag!
+}

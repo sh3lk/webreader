@@ -32,6 +32,30 @@ func (r *Ranobe) Categories(ctx context.Context) (result []*Category, err error)
 	return result, err
 }
 
+func (r *Ranobe) Tags(ctx context.Context) (result []*Tag, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = r.NamedTags(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = r.Edges.TagsOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = r.QueryTags().All(ctx)
+	}
+	return result, err
+}
+
+func (t *Tag) Ranobes(ctx context.Context) (result []*Ranobe, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = t.NamedRanobes(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = t.Edges.RanobesOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = t.QueryRanobes().All(ctx)
+	}
+	return result, err
+}
+
 func (t *Todo) User(ctx context.Context) (*User, error) {
 	result, err := t.Edges.UserOrErr()
 	if IsNotLoaded(err) {

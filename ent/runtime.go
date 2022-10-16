@@ -8,6 +8,7 @@ import (
 	"webreader/ent/ranobe"
 	"webreader/ent/schema"
 	"webreader/ent/schema/ulid"
+	"webreader/ent/tag"
 	"webreader/ent/todo"
 	"webreader/ent/user"
 )
@@ -58,6 +59,29 @@ func init() {
 	ranobeDescID := ranobeMixinFields0[0].Descriptor()
 	// ranobe.DefaultID holds the default value on creation for the id field.
 	ranobe.DefaultID = ranobeDescID.Default.(func() ulid.ID)
+	tagMixin := schema.Tag{}.Mixin()
+	tagMixinFields0 := tagMixin[0].Fields()
+	_ = tagMixinFields0
+	tagMixinFields2 := tagMixin[2].Fields()
+	_ = tagMixinFields2
+	tagFields := schema.Tag{}.Fields()
+	_ = tagFields
+	// tagDescCreatedAt is the schema descriptor for created_at field.
+	tagDescCreatedAt := tagMixinFields2[0].Descriptor()
+	// tag.DefaultCreatedAt holds the default value on creation for the created_at field.
+	tag.DefaultCreatedAt = tagDescCreatedAt.Default.(func() time.Time)
+	// tagDescUpdatedAt is the schema descriptor for updated_at field.
+	tagDescUpdatedAt := tagMixinFields2[1].Descriptor()
+	// tag.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	tag.DefaultUpdatedAt = tagDescUpdatedAt.Default.(func() time.Time)
+	// tagDescName is the schema descriptor for name field.
+	tagDescName := tagFields[0].Descriptor()
+	// tag.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	tag.NameValidator = tagDescName.Validators[0].(func(string) error)
+	// tagDescID is the schema descriptor for id field.
+	tagDescID := tagMixinFields0[0].Descriptor()
+	// tag.DefaultID holds the default value on creation for the id field.
+	tag.DefaultID = tagDescID.Default.(func() ulid.ID)
 	todoMixin := schema.Todo{}.Mixin()
 	todoMixinFields0 := todoMixin[0].Fields()
 	_ = todoMixinFields0

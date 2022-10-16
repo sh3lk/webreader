@@ -6,6 +6,7 @@ type Ranobe {
     summary: String!
     releaseDate: Int!
     categories: [Category!]
+    tags: [Tag!]
 }
 
 input UpdateRanobeInput {
@@ -17,6 +18,8 @@ input UpdateRanobeInput {
     releaseDate: Int
     addCategoryIDs: [ID!]
     removeCategoryIDs: [ID!]
+    addTagIDs: [ID!]
+    removeTagIDs: [ID!]
 }
 
 input CreateRanobeInput {
@@ -26,6 +29,7 @@ input CreateRanobeInput {
     summary: String!
     releaseDate: Int!
     categoryIDs: [ID!]
+    tagIDs: [ID!]
 }
 
 type RanobeEdge {

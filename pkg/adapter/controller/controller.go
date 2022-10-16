@@ -5,4 +5,5 @@ type Controller struct {
 	User     interface{ User }
 	Todo     interface{ Todo }
 	Category interface{ Category }
+	Tag      interface{ Tag }
 }

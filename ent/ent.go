@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"webreader/ent/category"
 	"webreader/ent/ranobe"
+	"webreader/ent/tag"
 	"webreader/ent/todo"
 	"webreader/ent/user"
 
@@ -36,6 +37,7 @@ func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
 		category.Table: category.ValidColumn,
 		ranobe.Table:   ranobe.ValidColumn,
+		tag.Table:      tag.ValidColumn,
 		todo.Table:     todo.ValidColumn,
 		user.Table:     user.ValidColumn,
 	}

@@ -13,6 +13,7 @@ import (
 
 	"webreader/ent/category"
 	"webreader/ent/ranobe"
+	"webreader/ent/tag"
 	"webreader/ent/todo"
 	"webreader/ent/user"
 
@@ -30,6 +31,8 @@ type Client struct {
 	Category *CategoryClient
 	// Ranobe is the client for interacting with the Ranobe builders.
 	Ranobe *RanobeClient
+	// Tag is the client for interacting with the Tag builders.
+	Tag *TagClient
 	// Todo is the client for interacting with the Todo builders.
 	Todo *TodoClient
 	// User is the client for interacting with the User builders.
@@ -49,6 +52,7 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Category = NewCategoryClient(c.config)
 	c.Ranobe = NewRanobeClient(c.config)
+	c.Tag = NewTagClient(c.config)
 	c.Todo = NewTodoClient(c.config)
 	c.User = NewUserClient(c.config)
 }
@@ -86,6 +90,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		config:   cfg,
 		Category: NewCategoryClient(cfg),
 		Ranobe:   NewRanobeClient(cfg),
+		Tag:      NewTagClient(cfg),
 		Todo:     NewTodoClient(cfg),
 		User:     NewUserClient(cfg),
 	}, nil
@@ -109,6 +114,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		config:   cfg,
 		Category: NewCategoryClient(cfg),
 		Ranobe:   NewRanobeClient(cfg),
+		Tag:      NewTagClient(cfg),
 		Todo:     NewTodoClient(cfg),
 		User:     NewUserClient(cfg),
 	}, nil
@@ -141,6 +147,7 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	c.Category.Use(hooks...)
 	c.Ranobe.Use(hooks...)
+	c.Tag.Use(hooks...)
 	c.Todo.Use(hooks...)
 	c.User.Use(hooks...)
 }
@@ -352,9 +359,131 @@ func (c *RanobeClient) QueryCategories(r *Ranobe) *CategoryQuery {
 	return query
 }
 
+// QueryTags queries the tags edge of a Ranobe.
+func (c *RanobeClient) QueryTags(r *Ranobe) *TagQuery {
+	query := &TagQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := r.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ranobe.Table, ranobe.FieldID, id),
+			sqlgraph.To(tag.Table, tag.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, ranobe.TagsTable, ranobe.TagsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *RanobeClient) Hooks() []Hook {
 	return c.hooks.Ranobe
+}
+
+// TagClient is a client for the Tag schema.
+type TagClient struct {
+	config
+}
+
+// NewTagClient returns a client for the Tag from the given config.
+func NewTagClient(c config) *TagClient {
+	return &TagClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `tag.Hooks(f(g(h())))`.
+func (c *TagClient) Use(hooks ...Hook) {
+	c.hooks.Tag = append(c.hooks.Tag, hooks...)
+}
+
+// Create returns a builder for creating a Tag entity.
+func (c *TagClient) Create() *TagCreate {
+	mutation := newTagMutation(c.config, OpCreate)
+	return &TagCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Tag entities.
+func (c *TagClient) CreateBulk(builders ...*TagCreate) *TagCreateBulk {
+	return &TagCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Tag.
+func (c *TagClient) Update() *TagUpdate {
+	mutation := newTagMutation(c.config, OpUpdate)
+	return &TagUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TagClient) UpdateOne(t *Tag) *TagUpdateOne {
+	mutation := newTagMutation(c.config, OpUpdateOne, withTag(t))
+	return &TagUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TagClient) UpdateOneID(id ulid.ID) *TagUpdateOne {
+	mutation := newTagMutation(c.config, OpUpdateOne, withTagID(id))
+	return &TagUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Tag.
+func (c *TagClient) Delete() *TagDelete {
+	mutation := newTagMutation(c.config, OpDelete)
+	return &TagDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TagClient) DeleteOne(t *Tag) *TagDeleteOne {
+	return c.DeleteOneID(t.ID)
+}
+
+// DeleteOne returns a builder for deleting the given entity by its id.
+func (c *TagClient) DeleteOneID(id ulid.ID) *TagDeleteOne {
+	builder := c.Delete().Where(tag.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TagDeleteOne{builder}
+}
+
+// Query returns a query builder for Tag.
+func (c *TagClient) Query() *TagQuery {
+	return &TagQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Tag entity by its id.
+func (c *TagClient) Get(ctx context.Context, id ulid.ID) (*Tag, error) {
+	return c.Query().Where(tag.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TagClient) GetX(ctx context.Context, id ulid.ID) *Tag {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryRanobes queries the ranobes edge of a Tag.
+func (c *TagClient) QueryRanobes(t *Tag) *RanobeQuery {
+	query := &RanobeQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tag.Table, tag.FieldID, id),
+			sqlgraph.To(ranobe.Table, ranobe.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, tag.RanobesTable, tag.RanobesPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *TagClient) Hooks() []Hook {
+	return c.hooks.Tag
 }
 
 // TodoClient is a client for the Todo schema.

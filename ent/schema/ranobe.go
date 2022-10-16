@@ -34,6 +34,7 @@ func (Ranobe) Fields() []ent.Field {
 func (Ranobe) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("categories", Category.Type),
+		edge.To("tags", Tag.Type),
 	}
 }
 

@@ -28,6 +28,8 @@ const (
 	FieldReleaseDate = "release_date"
 	// EdgeCategories holds the string denoting the categories edge name in mutations.
 	EdgeCategories = "categories"
+	// EdgeTags holds the string denoting the tags edge name in mutations.
+	EdgeTags = "tags"
 	// Table holds the table name of the ranobe in the database.
 	Table = "ranobes"
 	// CategoriesTable is the table that holds the categories relation/edge. The primary key declared below.
@@ -35,6 +37,11 @@ const (
 	// CategoriesInverseTable is the table name for the Category entity.
 	// It exists in this package in order to avoid circular dependency with the "category" package.
 	CategoriesInverseTable = "categories"
+	// TagsTable is the table that holds the tags relation/edge. The primary key declared below.
+	TagsTable = "ranobe_tags"
+	// TagsInverseTable is the table name for the Tag entity.
+	// It exists in this package in order to avoid circular dependency with the "tag" package.
+	TagsInverseTable = "tags"
 )
 
 // Columns holds all SQL columns for ranobe fields.
@@ -53,6 +60,9 @@ var (
 	// CategoriesPrimaryKey and CategoriesColumn2 are the table columns denoting the
 	// primary key for the categories relation (M2M).
 	CategoriesPrimaryKey = []string{"ranobe_id", "category_id"}
+	// TagsPrimaryKey and TagsColumn2 are the table columns denoting the
+	// primary key for the tags relation (M2M).
+	TagsPrimaryKey = []string{"ranobe_id", "tag_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).

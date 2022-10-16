@@ -39,6 +39,20 @@ var (
 		Columns:    RanobesColumns,
 		PrimaryKey: []*schema.Column{RanobesColumns[0]},
 	}
+	// TagsColumns holds the columns for the "tags" table.
+	TagsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime DEFAULT CURRENT_TIMESTAMP"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"}},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "description", Type: field.TypeString, Size: 2147483647},
+	}
+	// TagsTable holds the schema information for the "tags" table.
+	TagsTable = &schema.Table{
+		Name:       "tags",
+		Columns:    TagsColumns,
+		PrimaryKey: []*schema.Column{TagsColumns[0]},
+	}
 	// TodosColumns holds the columns for the "todos" table.
 	TodosColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString},
@@ -101,13 +115,40 @@ var (
 			},
 		},
 	}
+	// RanobeTagsColumns holds the columns for the "ranobe_tags" table.
+	RanobeTagsColumns = []*schema.Column{
+		{Name: "ranobe_id", Type: field.TypeString},
+		{Name: "tag_id", Type: field.TypeString},
+	}
+	// RanobeTagsTable holds the schema information for the "ranobe_tags" table.
+	RanobeTagsTable = &schema.Table{
+		Name:       "ranobe_tags",
+		Columns:    RanobeTagsColumns,
+		PrimaryKey: []*schema.Column{RanobeTagsColumns[0], RanobeTagsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "ranobe_tags_ranobe_id",
+				Columns:    []*schema.Column{RanobeTagsColumns[0]},
+				RefColumns: []*schema.Column{RanobesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "ranobe_tags_tag_id",
+				Columns:    []*schema.Column{RanobeTagsColumns[1]},
+				RefColumns: []*schema.Column{TagsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		CategoriesTable,
 		RanobesTable,
+		TagsTable,
 		TodosTable,
 		UsersTable,
 		RanobeCategoriesTable,
+		RanobeTagsTable,
 	}
 )
 
@@ -115,4 +156,6 @@ func init() {
 	TodosTable.ForeignKeys[0].RefTable = UsersTable
 	RanobeCategoriesTable.ForeignKeys[0].RefTable = RanobesTable
 	RanobeCategoriesTable.ForeignKeys[1].RefTable = CategoriesTable
+	RanobeTagsTable.ForeignKeys[0].RefTable = RanobesTable
+	RanobeTagsTable.ForeignKeys[1].RefTable = TagsTable
 }

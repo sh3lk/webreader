@@ -99,6 +99,18 @@ func (r *RanobeQuery) collectField(ctx context.Context, op *graphql.OperationCon
 			r.WithNamedCategories(alias, func(wq *CategoryQuery) {
 				*wq = *query
 			})
+		case "tags":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = &TagQuery{config: r.config}
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			r.WithNamedTags(alias, func(wq *TagQuery) {
+				*wq = *query
+			})
 		}
 	}
 	return nil
@@ -129,6 +141,68 @@ func newRanobePaginateArgs(rv map[string]interface{}) *ranobePaginateArgs {
 	}
 	if v, ok := rv[whereField].(*RanobeWhereInput); ok {
 		args.opts = append(args.opts, WithRanobeFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (t *TagQuery) CollectFields(ctx context.Context, satisfies ...string) (*TagQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return t, nil
+	}
+	if err := t.collectField(ctx, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return t, nil
+}
+
+func (t *TagQuery) collectField(ctx context.Context, op *graphql.OperationContext, field graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	for _, field := range graphql.CollectFields(op, field.Selections, satisfies) {
+		switch field.Name {
+		case "ranobes":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = &RanobeQuery{config: t.config}
+			)
+			if err := query.collectField(ctx, op, field, path, satisfies...); err != nil {
+				return err
+			}
+			t.WithNamedRanobes(alias, func(wq *RanobeQuery) {
+				*wq = *query
+			})
+		}
+	}
+	return nil
+}
+
+type tagPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []TagPaginateOption
+}
+
+func newTagPaginateArgs(rv map[string]interface{}) *tagPaginateArgs {
+	args := &tagPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[whereField].(*TagWhereInput); ok {
+		args.opts = append(args.opts, WithTagFilter(v.Filter))
 	}
 	return args
 }

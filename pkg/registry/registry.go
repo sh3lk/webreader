@@ -27,5 +27,6 @@ func (r *registry) NewController() controller.Controller {
 		User:     r.NewUserController(),
 		Todo:     r.NewTodoController(),
 		Category: r.NewCategoryController(),
+		Tag:      r.NewTagController(),
 	}
 }

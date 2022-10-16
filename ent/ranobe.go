@@ -40,13 +40,16 @@ type Ranobe struct {
 type RanobeEdges struct {
 	// Categories holds the value of the categories edge.
 	Categories []*Category `json:"categories,omitempty"`
+	// Tags holds the value of the tags edge.
+	Tags []*Tag `json:"tags,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 	// totalCount holds the count of the edges above.
-	totalCount [1]map[string]int
+	totalCount [2]map[string]int
 
 	namedCategories map[string][]*Category
+	namedTags       map[string][]*Tag
 }
 
 // CategoriesOrErr returns the Categories value or an error if the edge
@@ -56,6 +59,15 @@ func (e RanobeEdges) CategoriesOrErr() ([]*Category, error) {
 		return e.Categories, nil
 	}
 	return nil, &NotLoadedError{edge: "categories"}
+}
+
+// TagsOrErr returns the Tags value or an error if the edge
+// was not loaded in eager-loading.
+func (e RanobeEdges) TagsOrErr() ([]*Tag, error) {
+	if e.loadedTypes[1] {
+		return e.Tags, nil
+	}
+	return nil, &NotLoadedError{edge: "tags"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -144,6 +156,11 @@ func (r *Ranobe) QueryCategories() *CategoryQuery {
 	return (&RanobeClient{config: r.config}).QueryCategories(r)
 }
 
+// QueryTags queries the "tags" edge of the Ranobe entity.
+func (r *Ranobe) QueryTags() *TagQuery {
+	return (&RanobeClient{config: r.config}).QueryTags(r)
+}
+
 // Update returns a builder for updating this Ranobe.
 // Note that you need to call Ranobe.Unwrap() before calling this method if this Ranobe
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -212,6 +229,30 @@ func (r *Ranobe) appendNamedCategories(name string, edges ...*Category) {
 		r.Edges.namedCategories[name] = []*Category{}
 	} else {
 		r.Edges.namedCategories[name] = append(r.Edges.namedCategories[name], edges...)
+	}
+}
+
+// NamedTags returns the Tags named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (r *Ranobe) NamedTags(name string) ([]*Tag, error) {
+	if r.Edges.namedTags == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := r.Edges.namedTags[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (r *Ranobe) appendNamedTags(name string, edges ...*Tag) {
+	if r.Edges.namedTags == nil {
+		r.Edges.namedTags = make(map[string][]*Tag)
+	}
+	if len(edges) == 0 {
+		r.Edges.namedTags[name] = []*Tag{}
+	} else {
+		r.Edges.namedTags[name] = append(r.Edges.namedTags[name], edges...)
 	}
 }
 

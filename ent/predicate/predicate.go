@@ -12,6 +12,9 @@ type Category func(*sql.Selector)
 // Ranobe is the predicate function for ranobe builders.
 type Ranobe func(*sql.Selector)
 
+// Tag is the predicate function for tag builders.
+type Tag func(*sql.Selector)
+
 // Todo is the predicate function for todo builders.
 type Todo func(*sql.Selector)
 

@@ -11,6 +11,7 @@ import (
 	"webreader/ent/predicate"
 	"webreader/ent/ranobe"
 	"webreader/ent/schema/ulid"
+	"webreader/ent/tag"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -27,9 +28,11 @@ type RanobeQuery struct {
 	fields              []string
 	predicates          []predicate.Ranobe
 	withCategories      *CategoryQuery
+	withTags            *TagQuery
 	modifiers           []func(*sql.Selector)
 	loadTotal           []func(context.Context, []*Ranobe) error
 	withNamedCategories map[string]*CategoryQuery
+	withNamedTags       map[string]*TagQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -81,6 +84,28 @@ func (rq *RanobeQuery) QueryCategories() *CategoryQuery {
 			sqlgraph.From(ranobe.Table, ranobe.FieldID, selector),
 			sqlgraph.To(category.Table, category.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, false, ranobe.CategoriesTable, ranobe.CategoriesPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryTags chains the current query on the "tags" edge.
+func (rq *RanobeQuery) QueryTags() *TagQuery {
+	query := &TagQuery{config: rq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := rq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := rq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ranobe.Table, ranobe.FieldID, selector),
+			sqlgraph.To(tag.Table, tag.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, ranobe.TagsTable, ranobe.TagsPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
 		return fromU, nil
@@ -270,6 +295,7 @@ func (rq *RanobeQuery) Clone() *RanobeQuery {
 		order:          append([]OrderFunc{}, rq.order...),
 		predicates:     append([]predicate.Ranobe{}, rq.predicates...),
 		withCategories: rq.withCategories.Clone(),
+		withTags:       rq.withTags.Clone(),
 		// clone intermediate query.
 		sql:    rq.sql.Clone(),
 		path:   rq.path,
@@ -285,6 +311,17 @@ func (rq *RanobeQuery) WithCategories(opts ...func(*CategoryQuery)) *RanobeQuery
 		opt(query)
 	}
 	rq.withCategories = query
+	return rq
+}
+
+// WithTags tells the query-builder to eager-load the nodes that are connected to
+// the "tags" edge. The optional arguments are used to configure the query builder of the edge.
+func (rq *RanobeQuery) WithTags(opts ...func(*TagQuery)) *RanobeQuery {
+	query := &TagQuery{config: rq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	rq.withTags = query
 	return rq
 }
 
@@ -356,8 +393,9 @@ func (rq *RanobeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Ranob
 	var (
 		nodes       = []*Ranobe{}
 		_spec       = rq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			rq.withCategories != nil,
+			rq.withTags != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -388,10 +426,24 @@ func (rq *RanobeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Ranob
 			return nil, err
 		}
 	}
+	if query := rq.withTags; query != nil {
+		if err := rq.loadTags(ctx, query, nodes,
+			func(n *Ranobe) { n.Edges.Tags = []*Tag{} },
+			func(n *Ranobe, e *Tag) { n.Edges.Tags = append(n.Edges.Tags, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range rq.withNamedCategories {
 		if err := rq.loadCategories(ctx, query, nodes,
 			func(n *Ranobe) { n.appendNamedCategories(name) },
 			func(n *Ranobe, e *Category) { n.appendNamedCategories(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range rq.withNamedTags {
+		if err := rq.loadTags(ctx, query, nodes,
+			func(n *Ranobe) { n.appendNamedTags(name) },
+			func(n *Ranobe, e *Tag) { n.appendNamedTags(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -454,6 +506,64 @@ func (rq *RanobeQuery) loadCategories(ctx context.Context, query *CategoryQuery,
 		nodes, ok := nids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected "categories" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
+func (rq *RanobeQuery) loadTags(ctx context.Context, query *TagQuery, nodes []*Ranobe, init func(*Ranobe), assign func(*Ranobe, *Tag)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[ulid.ID]*Ranobe)
+	nids := make(map[ulid.ID]map[*Ranobe]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(ranobe.TagsTable)
+		s.Join(joinT).On(s.C(tag.FieldID), joinT.C(ranobe.TagsPrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(ranobe.TagsPrimaryKey[0]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(ranobe.TagsPrimaryKey[0]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	neighbors, err := query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+		assign := spec.Assign
+		values := spec.ScanValues
+		spec.ScanValues = func(columns []string) ([]any, error) {
+			values, err := values(columns[1:])
+			if err != nil {
+				return nil, err
+			}
+			return append([]any{new(ulid.ID)}, values...), nil
+		}
+		spec.Assign = func(columns []string, values []any) error {
+			outValue := *values[0].(*ulid.ID)
+			inValue := *values[1].(*ulid.ID)
+			if nids[inValue] == nil {
+				nids[inValue] = map[*Ranobe]struct{}{byID[outValue]: struct{}{}}
+				return assign(columns[1:], values[1:])
+			}
+			nids[inValue][byID[outValue]] = struct{}{}
+			return nil
+		}
+	})
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "tags" node returned %v`, n.ID)
 		}
 		for kn := range nodes {
 			assign(kn, n)
@@ -576,6 +686,20 @@ func (rq *RanobeQuery) WithNamedCategories(name string, opts ...func(*CategoryQu
 		rq.withNamedCategories = make(map[string]*CategoryQuery)
 	}
 	rq.withNamedCategories[name] = query
+	return rq
+}
+
+// WithNamedTags tells the query-builder to eager-load the nodes that are connected to the "tags"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (rq *RanobeQuery) WithNamedTags(name string, opts ...func(*TagQuery)) *RanobeQuery {
+	query := &TagQuery{config: rq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	if rq.withNamedTags == nil {
+		rq.withNamedTags = make(map[string]*TagQuery)
+	}
+	rq.withNamedTags[name] = query
 	return rq
 }
 

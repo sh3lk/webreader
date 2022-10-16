@@ -10,6 +10,7 @@ import (
 	"webreader/ent/predicate"
 	"webreader/ent/ranobe"
 	"webreader/ent/schema/ulid"
+	"webreader/ent/tag"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -81,6 +82,21 @@ func (ru *RanobeUpdate) AddCategories(c ...*Category) *RanobeUpdate {
 	return ru.AddCategoryIDs(ids...)
 }
 
+// AddTagIDs adds the "tags" edge to the Tag entity by IDs.
+func (ru *RanobeUpdate) AddTagIDs(ids ...ulid.ID) *RanobeUpdate {
+	ru.mutation.AddTagIDs(ids...)
+	return ru
+}
+
+// AddTags adds the "tags" edges to the Tag entity.
+func (ru *RanobeUpdate) AddTags(t ...*Tag) *RanobeUpdate {
+	ids := make([]ulid.ID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return ru.AddTagIDs(ids...)
+}
+
 // Mutation returns the RanobeMutation object of the builder.
 func (ru *RanobeUpdate) Mutation() *RanobeMutation {
 	return ru.mutation
@@ -105,6 +121,27 @@ func (ru *RanobeUpdate) RemoveCategories(c ...*Category) *RanobeUpdate {
 		ids[i] = c[i].ID
 	}
 	return ru.RemoveCategoryIDs(ids...)
+}
+
+// ClearTags clears all "tags" edges to the Tag entity.
+func (ru *RanobeUpdate) ClearTags() *RanobeUpdate {
+	ru.mutation.ClearTags()
+	return ru
+}
+
+// RemoveTagIDs removes the "tags" edge to Tag entities by IDs.
+func (ru *RanobeUpdate) RemoveTagIDs(ids ...ulid.ID) *RanobeUpdate {
+	ru.mutation.RemoveTagIDs(ids...)
+	return ru
+}
+
+// RemoveTags removes "tags" edges to Tag entities.
+func (ru *RanobeUpdate) RemoveTags(t ...*Tag) *RanobeUpdate {
+	ids := make([]ulid.ID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return ru.RemoveTagIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -275,6 +312,60 @@ func (ru *RanobeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if ru.mutation.TagsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   ranobe.TagsTable,
+			Columns: ranobe.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: tag.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.RemovedTagsIDs(); len(nodes) > 0 && !ru.mutation.TagsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   ranobe.TagsTable,
+			Columns: ranobe.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: tag.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.TagsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   ranobe.TagsTable,
+			Columns: ranobe.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: tag.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, ru.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{ranobe.Label}
@@ -346,6 +437,21 @@ func (ruo *RanobeUpdateOne) AddCategories(c ...*Category) *RanobeUpdateOne {
 	return ruo.AddCategoryIDs(ids...)
 }
 
+// AddTagIDs adds the "tags" edge to the Tag entity by IDs.
+func (ruo *RanobeUpdateOne) AddTagIDs(ids ...ulid.ID) *RanobeUpdateOne {
+	ruo.mutation.AddTagIDs(ids...)
+	return ruo
+}
+
+// AddTags adds the "tags" edges to the Tag entity.
+func (ruo *RanobeUpdateOne) AddTags(t ...*Tag) *RanobeUpdateOne {
+	ids := make([]ulid.ID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return ruo.AddTagIDs(ids...)
+}
+
 // Mutation returns the RanobeMutation object of the builder.
 func (ruo *RanobeUpdateOne) Mutation() *RanobeMutation {
 	return ruo.mutation
@@ -370,6 +476,27 @@ func (ruo *RanobeUpdateOne) RemoveCategories(c ...*Category) *RanobeUpdateOne {
 		ids[i] = c[i].ID
 	}
 	return ruo.RemoveCategoryIDs(ids...)
+}
+
+// ClearTags clears all "tags" edges to the Tag entity.
+func (ruo *RanobeUpdateOne) ClearTags() *RanobeUpdateOne {
+	ruo.mutation.ClearTags()
+	return ruo
+}
+
+// RemoveTagIDs removes the "tags" edge to Tag entities by IDs.
+func (ruo *RanobeUpdateOne) RemoveTagIDs(ids ...ulid.ID) *RanobeUpdateOne {
+	ruo.mutation.RemoveTagIDs(ids...)
+	return ruo
+}
+
+// RemoveTags removes "tags" edges to Tag entities.
+func (ruo *RanobeUpdateOne) RemoveTags(t ...*Tag) *RanobeUpdateOne {
+	ids := make([]ulid.ID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return ruo.RemoveTagIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -562,6 +689,60 @@ func (ruo *RanobeUpdateOne) sqlSave(ctx context.Context) (_node *Ranobe, err err
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: category.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if ruo.mutation.TagsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   ranobe.TagsTable,
+			Columns: ranobe.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: tag.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.RemovedTagsIDs(); len(nodes) > 0 && !ruo.mutation.TagsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   ranobe.TagsTable,
+			Columns: ranobe.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: tag.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.TagsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   ranobe.TagsTable,
+			Columns: ranobe.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: tag.FieldID,
 				},
 			},
 		}

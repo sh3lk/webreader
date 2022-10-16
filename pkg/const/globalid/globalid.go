@@ -1,6 +1,7 @@
 package globalid
 
 import (
+	"entgo.io/ent/entc/integration/edgeschema/ent/tag"
 	"fmt"
 	"log"
 	"reflect"
@@ -21,6 +22,7 @@ type GlobalIDs struct {
 	Todo     field
 	Ranobe   field
 	Category field
+	Tag      field
 }
 
 // New generates a map object that is intended to be used as global identification for node interface query.
@@ -42,6 +44,10 @@ func New() GlobalIDs {
 		Category: field{
 			Prefix: "0AD",
 			Table:  category.Table,
+		},
+		Tag: field{
+			Prefix: "0AE",
+			Table:  tag.Table,
 		},
 	}
 }

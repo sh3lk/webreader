@@ -10,6 +10,7 @@ import (
 	"webreader/ent/category"
 	"webreader/ent/ranobe"
 	"webreader/ent/schema/ulid"
+	"webreader/ent/tag"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -107,6 +108,21 @@ func (rc *RanobeCreate) AddCategories(c ...*Category) *RanobeCreate {
 		ids[i] = c[i].ID
 	}
 	return rc.AddCategoryIDs(ids...)
+}
+
+// AddTagIDs adds the "tags" edge to the Tag entity by IDs.
+func (rc *RanobeCreate) AddTagIDs(ids ...ulid.ID) *RanobeCreate {
+	rc.mutation.AddTagIDs(ids...)
+	return rc
+}
+
+// AddTags adds the "tags" edges to the Tag entity.
+func (rc *RanobeCreate) AddTags(t ...*Tag) *RanobeCreate {
+	ids := make([]ulid.ID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return rc.AddTagIDs(ids...)
 }
 
 // Mutation returns the RanobeMutation object of the builder.
@@ -326,6 +342,25 @@ func (rc *RanobeCreate) createSpec() (*Ranobe, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: category.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := rc.mutation.TagsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   ranobe.TagsTable,
+			Columns: ranobe.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: tag.FieldID,
 				},
 			},
 		}

@@ -84,6 +84,7 @@ type CreateRanobeInput struct {
 	Summary     string
 	ReleaseDate int
 	CategoryIDs []ulid.ID
+	TagIDs      []ulid.ID
 }
 
 // Mutate applies the CreateRanobeInput on the RanobeCreate builder.
@@ -101,6 +102,9 @@ func (i *CreateRanobeInput) Mutate(m *RanobeCreate) {
 	m.SetReleaseDate(i.ReleaseDate)
 	if ids := i.CategoryIDs; len(ids) > 0 {
 		m.AddCategoryIDs(ids...)
+	}
+	if ids := i.TagIDs; len(ids) > 0 {
+		m.AddTagIDs(ids...)
 	}
 }
 
@@ -120,6 +124,8 @@ type UpdateRanobeInput struct {
 	ReleaseDate       *int
 	AddCategoryIDs    []ulid.ID
 	RemoveCategoryIDs []ulid.ID
+	AddTagIDs         []ulid.ID
+	RemoveTagIDs      []ulid.ID
 }
 
 // Mutate applies the UpdateRanobeInput on the RanobeMutation.
@@ -145,6 +151,12 @@ func (i *UpdateRanobeInput) Mutate(m *RanobeMutation) {
 	if ids := i.RemoveCategoryIDs; len(ids) > 0 {
 		m.RemoveCategoryIDs(ids...)
 	}
+	if ids := i.AddTagIDs; len(ids) > 0 {
+		m.AddTagIDs(ids...)
+	}
+	if ids := i.RemoveTagIDs; len(ids) > 0 {
+		m.RemoveTagIDs(ids...)
+	}
 }
 
 // SetInput applies the change-set in the UpdateRanobeInput on the update builder.
@@ -155,6 +167,73 @@ func (u *RanobeUpdate) SetInput(i UpdateRanobeInput) *RanobeUpdate {
 
 // SetInput applies the change-set in the UpdateRanobeInput on the update-one builder.
 func (u *RanobeUpdateOne) SetInput(i UpdateRanobeInput) *RanobeUpdateOne {
+	i.Mutate(u.Mutation())
+	return u
+}
+
+// CreateTagInput represents a mutation input for creating tags.
+type CreateTagInput struct {
+	CreatedAt   *time.Time
+	UpdatedAt   *time.Time
+	Name        string
+	Description string
+	RanobeIDs   []ulid.ID
+}
+
+// Mutate applies the CreateTagInput on the TagCreate builder.
+func (i *CreateTagInput) Mutate(m *TagCreate) {
+	if v := i.CreatedAt; v != nil {
+		m.SetCreatedAt(*v)
+	}
+	if v := i.UpdatedAt; v != nil {
+		m.SetUpdatedAt(*v)
+	}
+	m.SetName(i.Name)
+	m.SetDescription(i.Description)
+	if ids := i.RanobeIDs; len(ids) > 0 {
+		m.AddRanobeIDs(ids...)
+	}
+}
+
+// SetInput applies the change-set in the CreateTagInput on the create builder.
+func (c *TagCreate) SetInput(i CreateTagInput) *TagCreate {
+	i.Mutate(c)
+	return c
+}
+
+// UpdateTagInput represents a mutation input for updating tags.
+type UpdateTagInput struct {
+	ID              ulid.ID
+	Name            *string
+	Description     *string
+	AddRanobeIDs    []ulid.ID
+	RemoveRanobeIDs []ulid.ID
+}
+
+// Mutate applies the UpdateTagInput on the TagMutation.
+func (i *UpdateTagInput) Mutate(m *TagMutation) {
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
+	if v := i.Description; v != nil {
+		m.SetDescription(*v)
+	}
+	if ids := i.AddRanobeIDs; len(ids) > 0 {
+		m.AddRanobeIDs(ids...)
+	}
+	if ids := i.RemoveRanobeIDs; len(ids) > 0 {
+		m.RemoveRanobeIDs(ids...)
+	}
+}
+
+// SetInput applies the change-set in the UpdateTagInput on the update builder.
+func (u *TagUpdate) SetInput(i UpdateTagInput) *TagUpdate {
+	i.Mutate(u.Mutation())
+	return u
+}
+
+// SetInput applies the change-set in the UpdateTagInput on the update-one builder.
+func (u *TagUpdateOne) SetInput(i UpdateTagInput) *TagUpdateOne {
 	i.Mutate(u.Mutation())
 	return u
 }
